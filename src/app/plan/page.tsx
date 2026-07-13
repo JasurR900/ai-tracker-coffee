@@ -120,7 +120,7 @@ export default function PlanPage() {
             dispatch(setAutoTrackOrders(!autoTrack));
             const { profile, app } = store.getState();
             if (app.userId) {
-              upsertProfile(app.userId, profile).catch(() => undefined);
+              upsertProfile(app.userId, profile, app.username).catch(() => undefined);
             }
           }}
           sx={{

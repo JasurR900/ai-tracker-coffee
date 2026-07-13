@@ -57,7 +57,7 @@ export default function ProcessingPage() {
         );
         const { profile: updatedProfile, app } = store.getState();
         if (app.userId) {
-          upsertProfile(app.userId, updatedProfile).catch((e) =>
+          upsertProfile(app.userId, updatedProfile, app.username).catch((e) =>
             console.error('Failed to save profile:', e),
           );
         }

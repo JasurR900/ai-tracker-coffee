@@ -45,9 +45,14 @@ export async function fetchProfile(userId: string): Promise<ProfileState | null>
   return rowToProfile(data as ProfileRow);
 }
 
-export async function upsertProfile(userId: string, profile: ProfileState): Promise<void> {
+export async function upsertProfile(
+  userId: string,
+  profile: ProfileState,
+  username?: string | null,
+): Promise<void> {
   const { error } = await getSupabase().from('profiles').upsert({
     id: userId,
+    username: username ?? null,
     gender: profile.gender,
     birth_date: profile.birthDate,
     height_cm: profile.heightCm,

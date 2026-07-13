@@ -15,6 +15,7 @@ const SQL = `
 -- ===== profiles =====
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  username text,
   gender text,
   birth_date jsonb,
   height_cm integer default 170,
