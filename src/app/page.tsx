@@ -1,0 +1,98 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import { AppShell } from '@/components/layout/AppShell';
+import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { useAppSelector } from '@/store/hooks';
+
+export default function WelcomePage() {
+  const router = useRouter();
+  const onboardingCompleted = useAppSelector((s) => s.profile.onboardingCompleted);
+  const hydrated = useAppSelector((s) => s.app.hydrated);
+
+  const handleStart = () => {
+    router.push(hydrated && onboardingCompleted ? '/dashboard' : '/onboarding/1');
+  };
+
+  return (
+    <AppShell fab="order" activeTab="home">
+      <Box
+        sx={{
+          py: 2,
+          textAlign: 'center',
+          bgcolor: '#FAFAFC',
+          borderBottom: '1px solid #ECEDF2',
+        }}
+      >
+        <Typography sx={{ fontSize: 22, fontWeight: 800, color: 'text.primary' }}>
+          Счётчик калорий
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          px: 3,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* soft background glows */}
+        <Box
+          sx={{
+            position: 'absolute',
+            width: 300,
+            height: 300,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(120,120,160,0.18) 0%, transparent 70%)',
+            top: '12%',
+            left: -120,
+            pointerEvents: 'none',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            width: 340,
+            height: 340,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(249,110,50,0.16) 0%, transparent 70%)',
+            bottom: '5%',
+            right: -140,
+            pointerEvents: 'none',
+          }}
+        />
+
+        <Typography
+          variant="h1"
+          sx={{ textAlign: 'center', fontSize: 28, mb: 1.5, position: 'relative' }}
+        >
+          Следите за своим
+          <br />
+          рационом
+        </Typography>
+        <Typography
+          sx={{
+            textAlign: 'center',
+            color: 'text.secondary',
+            fontSize: 16,
+            mb: 4,
+            position: 'relative',
+          }}
+        >
+          Ваш персональный
+          <br />
+          нутрициолог на базе ИИ
+        </Typography>
+        <PrimaryButton onClick={handleStart} sx={{ position: 'relative' }}>
+          Начать
+        </PrimaryButton>
+      </Box>
+    </AppShell>
+  );
+}
