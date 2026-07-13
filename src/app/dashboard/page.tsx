@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { AppShell } from '@/components/layout/AppShell';
-import { GreetingHeader } from '@/components/dashboard/GreetingHeader';
+import { GreetingHeader, GREETING_HEADER_HEIGHT } from '@/components/dashboard/GreetingHeader';
 import { WeekStrip } from '@/components/dashboard/WeekStrip';
 import { CaloriesCard, MacroCard } from '@/components/dashboard/CaloriesCard';
 import { MealCard, EmptyHistory } from '@/components/dashboard/MealCard';
@@ -65,6 +65,7 @@ export default function DashboardPage() {
   return (
     <AppShell scanFab>
       <GreetingHeader />
+      <Box sx={{ height: GREETING_HEADER_HEIGHT }} />
       <WeekStrip />
       <CaloriesCard
         remaining={remaining.calories}
