@@ -62,7 +62,7 @@ export default function ProcessingPage() {
   const checkedCount = Math.floor((percent / 99) * CHECK_ITEMS.length);
 
   return (
-    <AppShell withNav={false}>
+    <AppShell>
       <Box
         sx={{
           flex: 1,

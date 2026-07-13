@@ -35,7 +35,7 @@ export default function PremiumPage() {
   const [selected, setSelected] = useState('month');
 
   return (
-    <AppShell fab="upload" activeTab="home">
+    <AppShell>
       <PageHeader title="Premium Access" onBack={() => router.back()} />
 
       <Box sx={{ px: 2.5, pt: 1 }}>

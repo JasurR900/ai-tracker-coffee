@@ -126,7 +126,7 @@ export default function ScanPage() {
   );
 
   return (
-    <AppShell withNav={false} dark>
+    <AppShell dark>
       <Box
         sx={{
           flex: 1,

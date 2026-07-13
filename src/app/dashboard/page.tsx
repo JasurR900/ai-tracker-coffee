@@ -63,7 +63,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <AppShell fab="upload" activeTab="home">
+    <AppShell scanFab>
       <PageHeader title="Счётчик калорий" onClose={() => router.push('/')} elevated />
       <WeekStrip />
       <CaloriesCard

@@ -47,7 +47,7 @@ export default function ProfilePage() {
   ];
 
   return (
-    <AppShell fab="upload" activeTab="profile">
+    <AppShell>
       <PageHeader title="Профиль" elevated />
 
       <Box sx={{ px: 2.5, pt: 3 }}>

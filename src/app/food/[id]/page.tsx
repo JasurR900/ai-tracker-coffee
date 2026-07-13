@@ -42,10 +42,10 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
     if (hydrated && !meal) router.replace('/dashboard');
   }, [hydrated, meal, router]);
 
-  if (!meal) return <AppShell withNav={false}>{null}</AppShell>;
+  if (!meal) return <AppShell>{null}</AppShell>;
 
   return (
-    <AppShell fab="upload" activeTab="home">
+    <AppShell scanFab>
       {/* photo hero */}
       <Box sx={{ position: 'relative', height: 360, bgcolor: '#E9EAF0', flexShrink: 0 }}>
         {meal.photo ? (

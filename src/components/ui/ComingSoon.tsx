@@ -9,12 +9,11 @@ import { colors } from '@/theme/theme';
 interface ComingSoonProps {
   title: string;
   icon: React.ReactNode;
-  activeTab: 'loyalty' | 'maps';
 }
 
-export function ComingSoon({ title, icon, activeTab }: ComingSoonProps) {
+export function ComingSoon({ title, icon }: ComingSoonProps) {
   return (
-    <AppShell fab="upload" activeTab={activeTab}>
+    <AppShell>
       <PageHeader title={title} elevated />
       <Box
         sx={{

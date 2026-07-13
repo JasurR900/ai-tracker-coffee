@@ -35,7 +35,7 @@ export default function CheckoutPage() {
   const total = ITEMS.reduce((sum, i) => sum + i.price, 0);
 
   return (
-    <AppShell fab="order-dark" activeTab="profile">
+    <AppShell>
       <PageHeader title="Оформление" onBack={() => router.back()} showHelp elevated />
 
       <Box sx={{ px: 2.5, pt: 2.5 }}>

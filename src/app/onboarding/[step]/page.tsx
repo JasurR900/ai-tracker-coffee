@@ -54,7 +54,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
   };
 
   return (
-    <AppShell fab="order" activeTab="home">
+    <AppShell>
       <OnboardingHeader step={step} totalSteps={TOTAL_STEPS} onBack={handleBack} />
       <Box sx={{ px: 2.5, pt: 3, flex: 1 }}>
         {step === 1 && <StepProfile />}

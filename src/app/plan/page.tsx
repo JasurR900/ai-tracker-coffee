@@ -43,10 +43,10 @@ export default function PlanPage() {
     if (hydrated && !plan) router.replace('/onboarding/1');
   }, [hydrated, plan, router]);
 
-  if (!plan) return <AppShell withNav={false}>{null}</AppShell>;
+  if (!plan) return <AppShell>{null}</AppShell>;
 
   return (
-    <AppShell fab="order" activeTab="home">
+    <AppShell>
       <PageHeader title="Счётчик калорий" onClose={() => router.push('/dashboard')} />
 
       <Box sx={{ px: 2.5, pt: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>

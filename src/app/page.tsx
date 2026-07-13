@@ -17,7 +17,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <AppShell fab="order" activeTab="home">
+    <AppShell>
       <Box
         sx={{
           py: 2,
