@@ -9,6 +9,7 @@ import { hydrateMeals, clearMeals } from './slices/mealsSlice';
 import { markHydrated, setAuth } from './slices/appSlice';
 import { getSupabase } from '@/lib/supabase/client';
 import { fetchMeals, fetchProfile } from '@/lib/supabase/db';
+import { emailToUsername } from '@/lib/username';
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const storeRef = useRef<AppStore | null>(null);
@@ -33,7 +34,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const userId = session.user.id;
       if (loadedUserId.current === userId) return;
       loadedUserId.current = userId;
-      store.dispatch(setAuth({ userId, email: session.user.email ?? null }));
+      const username =
+        (session.user.user_metadata?.username as string | undefined) ??
+        emailToUsername(session.user.email ?? null);
+      store.dispatch(setAuth({ userId, username }));
       const [profile, meals] = await Promise.all([fetchProfile(userId), fetchMeals(userId)]);
       if (profile) store.dispatch(hydrateProfile(profile));
       store.dispatch(hydrateMeals({ items: meals }));

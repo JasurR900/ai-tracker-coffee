@@ -4,14 +4,14 @@ interface AppState {
   hydrated: boolean;
   authenticated: boolean;
   userId: string | null;
-  email: string | null;
+  username: string | null;
 }
 
 const initialState: AppState = {
   hydrated: false,
   authenticated: false,
   userId: null,
-  email: null,
+  username: null,
 };
 
 const appSlice = createSlice({
@@ -23,11 +23,11 @@ const appSlice = createSlice({
     },
     setAuth: (
       state,
-      action: PayloadAction<{ userId: string; email: string | null } | null>,
+      action: PayloadAction<{ userId: string; username: string | null } | null>,
     ) => {
       state.authenticated = action.payload !== null;
       state.userId = action.payload?.userId ?? null;
-      state.email = action.payload?.email ?? null;
+      state.username = action.payload?.username ?? null;
     },
   },
 });

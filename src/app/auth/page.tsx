@@ -12,6 +12,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
 import { getSupabase } from '@/lib/supabase/client';
+import { usernameToEmail, USERNAME_RE } from '@/lib/username';
 import { useAppSelector } from '@/store/hooks';
 
 type Mode = 'login' | 'register';
@@ -33,7 +34,7 @@ export default function AuthPage() {
   const onboardingCompleted = useAppSelector((s) => s.profile.onboardingCompleted);
 
   const [mode, setMode] = useState<Mode>('login');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,12 +50,16 @@ export default function AuthPage() {
     setError(null);
     setLoading(true);
     try {
+      const cleanUsername = username.trim().toLowerCase();
+      if (!USERNAME_RE.test(cleanUsername)) {
+        throw new Error('Имя пользователя: 3–20 символов, только латинские буквы, цифры и _');
+      }
       const supabase = getSupabase();
       if (mode === 'register') {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ username: cleanUsername, password }),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -62,13 +67,13 @@ export default function AuthPage() {
         }
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email: usernameToEmail(cleanUsername),
         password,
       });
       if (signInError) {
         throw new Error(
           /invalid/i.test(signInError.message)
-            ? 'Неверный e-mail или пароль'
+            ? 'Неверное имя пользователя или пароль'
             : signInError.message,
         );
       }
@@ -115,13 +120,14 @@ export default function AuthPage() {
         )}
 
         <TextField
-          type="email"
-          placeholder="Электронная почта"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Имя пользователя"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
           fullWidth
-          autoComplete="email"
+          autoComplete="username"
+          slotProps={{ htmlInput: { maxLength: 20, autoCapitalize: 'none', autoCorrect: 'off' } }}
           sx={{ ...fieldSx, mb: 2 }}
         />
         <TextField

@@ -6,9 +6,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ButtonBase from '@mui/material/ButtonBase';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-
-const USER_NAME = 'Jasur Ruzikulov';
-const USER_INITIALS = 'JR';
+import { useAppSelector } from '@/store/hooks';
 
 /** Height of the fixed header block (card + top offset), for content spacing. */
 export const GREETING_HEADER_HEIGHT = 84;
@@ -22,6 +20,11 @@ function greetingByHour(hour: number): string {
 export function GreetingHeader() {
   const router = useRouter();
   const greeting = greetingByHour(new Date().getHours());
+  const username = useAppSelector((s) => s.app.username);
+  const displayName = username
+    ? username.charAt(0).toUpperCase() + username.slice(1)
+    : 'друг';
+  const initials = (username ?? '?').slice(0, 2).toUpperCase();
 
   return (
     <Box
@@ -85,7 +88,7 @@ export function GreetingHeader() {
               }}
             >
               <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 14, letterSpacing: 0.5 }}>
-                {USER_INITIALS}
+                {initials}
               </Typography>
             </Box>
           </Box>
@@ -93,7 +96,7 @@ export function GreetingHeader() {
             noWrap
             sx={{ flex: 1, minWidth: 0, color: '#fff', fontWeight: 700, fontSize: 12.5, lineHeight: 1.3 }}
           >
-            {greeting}, {USER_NAME}!
+            {greeting}, {displayName}!
           </Typography>
         </ButtonBase>
 

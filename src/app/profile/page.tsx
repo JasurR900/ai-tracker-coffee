@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const dispatch = useAppDispatch();
   const profile = useAppSelector((s) => s.profile);
   const userId = useAppSelector((s) => s.app.userId);
-  const email = useAppSelector((s) => s.app.email);
+  const username = useAppSelector((s) => s.app.username);
 
   const handleReset = async () => {
     if (userId) {
@@ -83,9 +83,9 @@ export default function ProfilePage() {
           <Typography sx={{ mt: 1.5, fontSize: 19, fontWeight: 800, color: colors.heading }}>
             Мой профиль
           </Typography>
-          {email && (
+          {username && (
             <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.5 }}>
-              {email}
+              @{username}
             </Typography>
           )}
           {profile.plan && (
