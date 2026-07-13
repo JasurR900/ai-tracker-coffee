@@ -6,7 +6,12 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 /** Tried in order — the first model the API key has access to wins. */
-const MODEL_CANDIDATES = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+const MODEL_CANDIDATES = [
+  'gemini-3.1-pro-preview',
+  'gemini-3-flash-preview',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+];
 
 const PROMPT = `Ты — профессиональный нутрициолог. Проанализируй фотографию еды.
 Определи блюдо и оцени его пищевую ценность для порции, изображённой на фото.
