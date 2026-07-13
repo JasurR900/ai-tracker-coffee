@@ -3,14 +3,10 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import ButtonBase from '@mui/material/ButtonBase';
-import PlaceIcon from '@mui/icons-material/Place';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 const USER_NAME = 'Jasur Ruzikulov';
 const USER_INITIALS = 'JR';
-const LOCATION = 'Г. ТАШКЕНТ, БИЗНЕС ЦЕНТР DIAMOND';
 
 function greetingByHour(hour: number): string {
   if (hour >= 5 && hour < 12) return 'Доброе утро';
@@ -32,14 +28,14 @@ export function GreetingHeader() {
         alignItems: 'center',
         gap: 1.25,
         px: 1.5,
-        py: 2,
+        py: 1.75,
       }}
     >
       {/* avatar */}
       <Box
         sx={{
-          width: 46,
-          height: 46,
+          width: 42,
+          height: 42,
           borderRadius: '50%',
           flexShrink: 0,
           p: '2px',
@@ -57,49 +53,26 @@ export function GreetingHeader() {
             justifyContent: 'center',
           }}
         >
-          <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 15, letterSpacing: 0.5 }}>
+          <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 14, letterSpacing: 0.5 }}>
             {USER_INITIALS}
           </Typography>
         </Box>
       </Box>
 
-      {/* greeting + location */}
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 13.5, lineHeight: 1.3 }} noWrap>
-          {greeting}, {USER_NAME}!
-        </Typography>
-        <ButtonBase
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            mt: 0.5,
-            borderRadius: 1,
-            maxWidth: '100%',
-          }}
-        >
-          <PlaceIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.85)', flexShrink: 0 }} />
-          <Typography
-            noWrap
-            sx={{
-              color: 'rgba(255,255,255,0.85)',
-              fontSize: 9.5,
-              fontWeight: 600,
-              letterSpacing: 0.3,
-            }}
-          >
-            {LOCATION}
-          </Typography>
-          <ChevronRightIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', flexShrink: 0 }} />
-        </ButtonBase>
-      </Box>
+      {/* greeting */}
+      <Typography
+        noWrap
+        sx={{ flex: 1, minWidth: 0, color: '#fff', fontWeight: 700, fontSize: 12.5, lineHeight: 1.3 }}
+      >
+        {greeting}, {USER_NAME}!
+      </Typography>
 
       {/* notification bell */}
       <IconButton
         aria-label="Уведомления"
         sx={{
-          width: 38,
-          height: 38,
+          width: 36,
+          height: 36,
           flexShrink: 0,
           border: '1.5px solid rgba(255,255,255,0.35)',
           color: '#fff',
@@ -107,14 +80,14 @@ export function GreetingHeader() {
           '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
         }}
       >
-        <NotificationsNoneIcon sx={{ fontSize: 20 }} />
+        <NotificationsNoneIcon sx={{ fontSize: 18 }} />
         <Box
           sx={{
             position: 'absolute',
-            top: 7,
-            right: 9,
-            width: 7,
-            height: 7,
+            top: 6,
+            right: 8,
+            width: 6.5,
+            height: 6.5,
             borderRadius: '50%',
             bgcolor: '#F94C10',
             border: '1.5px solid #1D2380',
