@@ -48,7 +48,7 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <PageHeader title="Профиль" elevated />
+      <PageHeader title="Профиль" onBack={() => router.push('/dashboard')} elevated />
 
       <Box sx={{ px: 2.5, pt: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
