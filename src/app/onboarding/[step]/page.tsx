@@ -13,12 +13,14 @@ import { StepWorkouts } from '@/components/onboarding/steps/StepWorkouts';
 import { StepGoal } from '@/components/onboarding/steps/StepGoal';
 import { StepDiet } from '@/components/onboarding/steps/StepDiet';
 import { useAppSelector } from '@/store/hooks';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 const TOTAL_STEPS = 5;
 
 export default function OnboardingStepPage({ params }: { params: Promise<{ step: string }> }) {
   const { step: stepParam } = use(params);
   const router = useRouter();
+  useAuthGuard();
   const profile = useAppSelector((s) => s.profile);
 
   const step = useMemo(() => {

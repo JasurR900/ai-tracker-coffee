@@ -13,8 +13,10 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector, useAppStore } from '@/store/hooks';
 import { setAutoTrackOrders } from '@/store/slices/profileSlice';
+import { upsertProfile } from '@/lib/supabase/db';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 function MacroValue({ label, value }: { label: string; value: number }) {
   return (
@@ -34,7 +36,9 @@ function MacroValue({ label, value }: { label: string; value: number }) {
 
 export default function PlanPage() {
   const router = useRouter();
+  useAuthGuard();
   const dispatch = useAppDispatch();
+  const store = useAppStore();
   const plan = useAppSelector((s) => s.profile.plan);
   const autoTrack = useAppSelector((s) => s.profile.autoTrackOrders);
   const hydrated = useAppSelector((s) => s.app.hydrated);
@@ -112,7 +116,13 @@ export default function PlanPage() {
         </Button>
 
         <ButtonBase
-          onClick={() => dispatch(setAutoTrackOrders(!autoTrack))}
+          onClick={() => {
+            dispatch(setAutoTrackOrders(!autoTrack));
+            const { profile, app } = store.getState();
+            if (app.userId) {
+              upsertProfile(app.userId, profile).catch(() => undefined);
+            }
+          }}
           sx={{
             display: 'flex',
             alignItems: 'center',

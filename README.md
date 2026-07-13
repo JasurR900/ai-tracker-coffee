@@ -1,6 +1,6 @@
 # Счётчик калорий — AI Трекер (Cal AI)
 
-AI-kaloriya trekeri webapp: Next.js 16 + TypeScript + MUI v9 + Redux Toolkit + Google Gemini.
+AI-kaloriya trekeri webapp: Next.js 16 + TypeScript + MUI v9 + Redux Toolkit + Google Gemini + Supabase (auth, database, storage).
 
 ## Sahifalar
 
@@ -28,10 +28,19 @@ npm start        # production server
 
 ## Muhit sozlamalari
 
-`.env.local`:
+`.env.local` (`.env.example`dan nusxa oling):
 
 ```
-GEMINI_API_KEY=<sizning-kalitingiz>
+GEMINI_API_KEY=<gemini-key>
+NEXT_PUBLIC_SUPABASE_URL=<supabase-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+```
+
+Yangi Supabase proyekt uchun schema (jadvallar, RLS, storage bucket) bir marta o'rnatiladi:
+
+```bash
+POSTGRES_URL_NON_POOLING="postgres://..." node scripts/setup-db.mjs
 ```
 
 > **Muhim:** Hozirgi kalitning free-tier kvotasi 0 va Gemini 2.5+/3.x modellarga
@@ -57,8 +66,11 @@ src/
 └── types/                  # Umumiy TypeScript tiplar
 ```
 
-- **Persistensiya:** butun holat `localStorage`da (`calai:profile`, `calai:meals`),
-  store subscribe orqali avtomatik saqlanadi, SSR-xavfsiz hydration bilan.
+- **Auth:** Supabase email/parol. Registratsiya server route (`/api/auth/register`)
+  orqali service-role bilan tasdiqlangan user yaratadi — email-confirmation shart emas.
+- **Persistensiya:** profil va ovqatlar Supabase Postgres'da (`profiles`, `meals`
+  jadvallari, RLS bilan har kim faqat o'z ma'lumotini ko'radi), sessiya reload'dan
+  keyin ham saqlanadi.
+- **Rasmlar:** clientda 640px/JPEG'ga siqiladi → Supabase Storage `meal-photos`
+  bucket'iga yuklanadi (public URL, foydalanuvchi faqat o'z papkasiga yozadi).
 - **Plan hisobi:** Mifflin–St Jeor BMR × faollik × maqsad; makrolar dieta bo'yicha.
-- **Rasmlar:** clientda 640px/JPEG'ga siqiladi, localStorage kvotasi himoyalangan
-  (30 ta ovqat cheklovi, kvota to'lsa eski fotolar tushiriladi).

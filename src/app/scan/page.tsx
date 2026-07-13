@@ -13,16 +13,20 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import { AppShell } from '@/components/layout/AppShell';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppStore } from '@/store/hooks';
 import { addMeal } from '@/store/slices/mealsSlice';
 import { compressImage } from '@/lib/image';
-import type { FoodAnalysis, Meal } from '@/types';
+import { insertMeal, uploadMealPhoto } from '@/lib/supabase/db';
+import { useAuthGuard } from '@/lib/useAuthGuard';
+import type { FoodAnalysis } from '@/types';
 
 type Status = 'idle' | 'analyzing';
 
 export default function ScanPage() {
   const router = useRouter();
+  useAuthGuard();
   const dispatch = useAppDispatch();
+  const store = useAppStore();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,17 +79,21 @@ export default function ScanPage() {
           setStatus('idle');
           return;
         }
-        const meal: Meal = {
-          id: `meal-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+        const userId = store.getState().app.userId;
+        if (!userId) {
+          router.push('/auth');
+          return;
+        }
+        const photoUrl = await uploadMealPhoto(userId, photoDataUrl);
+        const meal = await insertMeal(userId, {
           name: data.name,
           calories: data.calories,
           protein: data.protein,
           fats: data.fats,
           carbs: data.carbs,
           description: data.description,
-          photo: photoDataUrl,
-          createdAt: new Date().toISOString(),
-        };
+          photo: photoUrl,
+        });
         dispatch(addMeal(meal));
         router.push(`/food/${meal.id}`);
       } catch (e) {
@@ -93,7 +101,7 @@ export default function ScanPage() {
         setStatus('idle');
       }
     },
-    [dispatch, router],
+    [dispatch, router, store],
   );
 
   const handleCapture = useCallback(async () => {

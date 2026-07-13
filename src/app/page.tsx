@@ -11,9 +11,14 @@ export default function WelcomePage() {
   const router = useRouter();
   const onboardingCompleted = useAppSelector((s) => s.profile.onboardingCompleted);
   const hydrated = useAppSelector((s) => s.app.hydrated);
+  const authenticated = useAppSelector((s) => s.app.authenticated);
 
   const handleStart = () => {
-    router.push(hydrated && onboardingCompleted ? '/dashboard' : '/onboarding/1');
+    if (!hydrated || !authenticated) {
+      router.push('/auth');
+    } else {
+      router.push(onboardingCompleted ? '/dashboard' : '/onboarding/1');
+    }
   };
 
   return (

@@ -10,6 +10,7 @@ import RestaurantOutlinedIcon from '@mui/icons-material/RestaurantOutlined';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAppSelector } from '@/store/hooks';
 import { colors } from '@/theme/theme';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 function StatCell({ value, label }: { value: string; label: string }) {
   return (
@@ -35,12 +36,12 @@ function StatCell({ value, label }: { value: string; label: string }) {
 export default function FoodDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const hydrated = useAppSelector((s) => s.app.hydrated);
+  const { ready } = useAuthGuard();
   const meal = useAppSelector((s) => s.meals.items.find((m) => m.id === id));
 
   useEffect(() => {
-    if (hydrated && !meal) router.replace('/dashboard');
-  }, [hydrated, meal, router]);
+    if (ready && !meal) router.replace('/dashboard');
+  }, [ready, meal, router]);
 
   if (!meal) return <AppShell>{null}</AppShell>;
 

@@ -13,18 +13,19 @@ import { CaloriesCard, MacroCard } from '@/components/dashboard/CaloriesCard';
 import { MealCard, EmptyHistory } from '@/components/dashboard/MealCard';
 import { useAppSelector } from '@/store/hooks';
 import { isToday } from '@/lib/format';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 import { colors } from '@/theme/theme';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const hydrated = useAppSelector((s) => s.app.hydrated);
+  const { ready } = useAuthGuard();
   const plan = useAppSelector((s) => s.profile.plan);
   const onboardingCompleted = useAppSelector((s) => s.profile.onboardingCompleted);
   const meals = useAppSelector((s) => s.meals.items);
 
   useEffect(() => {
-    if (hydrated && !onboardingCompleted) router.replace('/');
-  }, [hydrated, onboardingCompleted, router]);
+    if (ready && !onboardingCompleted) router.replace('/onboarding/1');
+  }, [ready, onboardingCompleted, router]);
 
   const todayTotals = useMemo(() => {
     return meals

@@ -8,15 +8,19 @@ import Paper from '@mui/material/Paper';
 import CheckIcon from '@mui/icons-material/Check';
 import { AppShell } from '@/components/layout/AppShell';
 import { colors } from '@/theme/theme';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector, useAppStore } from '@/store/hooks';
 import { setPlan } from '@/store/slices/profileSlice';
 import { calculatePlan } from '@/lib/nutrition';
+import { upsertProfile } from '@/lib/supabase/db';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 const CHECK_ITEMS = ['Калории', 'Углеводы', 'Белки', 'Жиры', 'Оценка здоровья'];
 
 export default function ProcessingPage() {
   const router = useRouter();
+  useAuthGuard();
   const dispatch = useAppDispatch();
+  const store = useAppStore();
   const profile = useAppSelector((s) => s.profile);
   const hydrated = useAppSelector((s) => s.app.hydrated);
   const [percent, setPercent] = useState(0);
@@ -51,6 +55,12 @@ export default function ProcessingPage() {
             }),
           ),
         );
+        const { profile: updatedProfile, app } = store.getState();
+        if (app.userId) {
+          upsertProfile(app.userId, updatedProfile).catch((e) =>
+            console.error('Failed to save profile:', e),
+          );
+        }
         setTimeout(() => router.push('/plan'), 450);
       }
     }, 40);

@@ -10,6 +10,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import PersonIcon from '@mui/icons-material/Person';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import TuneIcon from '@mui/icons-material/Tune';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -17,6 +18,9 @@ import { resetProfile } from '@/store/slices/profileSlice';
 import { clearMeals } from '@/store/slices/mealsSlice';
 import { getAge } from '@/lib/nutrition';
 import { colors } from '@/theme/theme';
+import { getSupabase } from '@/lib/supabase/client';
+import { deleteMeals, deleteProfile } from '@/lib/supabase/db';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 const GOAL_LABELS = { lose: 'Снижение веса', maintain: 'Поддерживать вес', gain: 'Набрать массу' };
 const DIET_LABELS = {
@@ -28,13 +32,24 @@ const DIET_LABELS = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  useAuthGuard();
   const dispatch = useAppDispatch();
   const profile = useAppSelector((s) => s.profile);
+  const userId = useAppSelector((s) => s.app.userId);
+  const email = useAppSelector((s) => s.app.email);
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    if (userId) {
+      await Promise.all([deleteMeals(userId), deleteProfile(userId)]).catch(() => undefined);
+    }
     dispatch(resetProfile());
     dispatch(clearMeals());
-    router.push('/');
+    router.push('/onboarding/1');
+  };
+
+  const handleLogout = async () => {
+    await getSupabase().auth.signOut();
+    router.push('/auth');
   };
 
   const rows: Array<[string, string]> = [
@@ -68,8 +83,13 @@ export default function ProfilePage() {
           <Typography sx={{ mt: 1.5, fontSize: 19, fontWeight: 800, color: colors.heading }}>
             Мой профиль
           </Typography>
-          {profile.plan && (
+          {email && (
             <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.5 }}>
+              {email}
+            </Typography>
+          )}
+          {profile.plan && (
+            <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.25 }}>
               Дневная цель: {profile.plan.calories} калорий
             </Typography>
           )}
@@ -132,6 +152,26 @@ export default function ProfilePage() {
             <TuneIcon sx={{ color: colors.navy }} />
             <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 15.5, color: colors.heading }}>
               Изменить параметры
+            </Typography>
+            <ChevronRightIcon sx={{ color: '#9C9FAD' }} />
+          </ButtonBase>
+          <ButtonBase
+            onClick={handleLogout}
+            sx={{
+              width: '100%',
+              borderRadius: '16px',
+              bgcolor: '#fff',
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              textAlign: 'left',
+              boxShadow: '0 4px 16px rgba(23, 26, 78, 0.05)',
+            }}
+          >
+            <LogoutIcon sx={{ color: '#C64A5B' }} />
+            <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 15.5, color: colors.heading }}>
+              Выйти из аккаунта
             </Typography>
             <ChevronRightIcon sx={{ color: '#9C9FAD' }} />
           </ButtonBase>
