@@ -5,10 +5,40 @@ body {
   background: #e9eaf0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* native-app feel inside WebView */
+  overscroll-behavior: none; /* no pull-to-refresh / scroll chaining */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none; /* no long-press callout on iOS */
+  touch-action: pan-y; /* vertical scroll only, no double-tap zoom */
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* app-like: UI text is not selectable, form fields are */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* images behave like app assets, not draggable web images */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+button img,
+a img {
+  pointer-events: auto;
 }
 
 ::-webkit-scrollbar {
@@ -18,4 +48,62 @@ body {
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== native-like page transition (used by app/template.tsx) ===== */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-transition {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  animation: page-in 0.28s cubic-bezier(0.2, 0.8, 0.35, 1);
+}
+
+/* ===== press feedback on every tappable control ===== */
+.MuiButtonBase-root {
+  transition: transform 0.12s ease;
+}
+
+.MuiButtonBase-root:active {
+  transform: scale(0.96);
+}
+
+/* ===== FAB menu ===== */
+@keyframes fab-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fab-menu-item {
+  animation: fab-item-in 0.22s cubic-bezier(0.2, 0.8, 0.35, 1) backwards;
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fab-backdrop {
+  animation: backdrop-in 0.2s ease;
 }

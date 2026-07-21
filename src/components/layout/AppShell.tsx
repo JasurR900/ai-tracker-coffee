@@ -44,8 +44,17 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
     }
   };
 
-  const menuItem = (label: string, icon: React.ReactNode, onClick: () => void) => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+  const menuItem = (label: string, icon: React.ReactNode, onClick: () => void, delay = 0) => (
+    <Box
+      className="fab-menu-item"
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 1,
+        animationDelay: `${delay}ms`,
+      }}
+    >
       <ButtonBase
         onClick={onClick}
         aria-label={label}
@@ -128,6 +137,7 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
           {/* dim backdrop while the menu is open */}
           {menuOpen && (
             <Box
+              className="fab-backdrop"
               onClick={() => setMenuOpen(false)}
               sx={{
                 position: 'fixed',
@@ -161,19 +171,32 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
                   mb: 2.5,
                 }}
               >
-                {menuItem('Галерея', <PhotoLibraryOutlinedIcon />, () =>
-                  fileInputRef.current?.click(),
+                {menuItem(
+                  'Галерея',
+                  <PhotoLibraryOutlinedIcon />,
+                  () => fileInputRef.current?.click(),
+                  40,
                 )}
                 <Box sx={{ mb: 3 }}>
-                  {menuItem('Камера', <PhotoCameraOutlinedIcon />, () => {
-                    setMenuOpen(false);
-                    router.push('/scan');
-                  })}
+                  {menuItem(
+                    'Камера',
+                    <PhotoCameraOutlinedIcon />,
+                    () => {
+                      setMenuOpen(false);
+                      router.push('/scan');
+                    },
+                    0,
+                  )}
                 </Box>
-                {menuItem('Текст', <EditNoteIcon />, () => {
-                  setMenuOpen(false);
-                  router.push('/add-text');
-                })}
+                {menuItem(
+                  'Текст',
+                  <EditNoteIcon />,
+                  () => {
+                    setMenuOpen(false);
+                    router.push('/add-text');
+                  },
+                  80,
+                )}
               </Box>
             )}
 

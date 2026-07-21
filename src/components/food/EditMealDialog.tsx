@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import Dialog from '@mui/material/Dialog';
+import Slide from '@mui/material/Slide';
+import type { TransitionProps } from '@mui/material/transitions';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
@@ -23,6 +25,13 @@ const fieldSx = {
     '&.Mui-focused fieldset': { borderColor: colors.navy },
   },
 };
+
+const SlideUp = forwardRef(function SlideUp(
+  props: TransitionProps & { children: React.ReactElement },
+  ref: React.Ref<unknown>,
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 interface EditMealDialogProps {
   meal: Meal;
@@ -90,8 +99,20 @@ export function EditMealDialog({ meal, open, onClose }: EditMealDialogProps) {
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth="xs"
-      slotProps={{ paper: { sx: { borderRadius: '20px', m: 2 } } }}
+      maxWidth={false}
+      slots={{ transition: SlideUp }}
+      sx={{ '& .MuiDialog-container': { alignItems: 'flex-end' } }}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: '24px 24px 0 0',
+            m: 0,
+            width: '100%',
+            maxWidth: 430,
+            pb: 'env(safe-area-inset-bottom, 0px)',
+          },
+        },
+      }}
     >
       <Box sx={{ p: 2.5 }}>
         <Typography variant="h3" sx={{ fontSize: 19, mb: 2 }}>

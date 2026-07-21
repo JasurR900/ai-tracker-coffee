@@ -166,7 +166,7 @@ export default function ScanPage() {
             borderRadius: 2,
             bgcolor: '#fff',
             mx: 'auto',
-            mt: 1.5,
+            mt: 'calc(env(safe-area-inset-top, 0px) + 12px)',
             opacity: 0.9,
           }}
         />

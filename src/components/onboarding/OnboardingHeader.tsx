@@ -14,7 +14,7 @@ interface OnboardingHeaderProps {
 
 export function OnboardingHeader({ step, totalSteps, onBack }: OnboardingHeaderProps) {
   return (
-    <Box sx={{ px: 2.5, pt: 2 }}>
+    <Box sx={{ px: 2.5, pt: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative', mb: 2 }}>
         <IconButton onClick={onBack} sx={{ color: colors.heading, p: 0.5, ml: -0.5 }} aria-label="Назад">
           <ArrowBackIcon />

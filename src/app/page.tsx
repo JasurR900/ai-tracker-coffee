@@ -25,7 +25,8 @@ export default function WelcomePage() {
     <AppShell>
       <Box
         sx={{
-          py: 2,
+          pb: 2,
+          pt: 'calc(env(safe-area-inset-top, 0px) + 16px)',
           textAlign: 'center',
           bgcolor: '#FAFAFC',
           borderBottom: '1px solid #ECEDF2',

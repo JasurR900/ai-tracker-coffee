@@ -9,7 +9,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import { useAppSelector } from '@/store/hooks';
 
 /** Height of the fixed header block (card + top offset), for content spacing. */
-export const GREETING_HEADER_HEIGHT = 84;
+export const GREETING_HEADER_HEIGHT = 'calc(76px + max(env(safe-area-inset-top), 8px))';
 
 function greetingByHour(hour: number): string {
   if (hour >= 5 && hour < 12) return 'Доброе утро';
@@ -37,7 +37,7 @@ export function GreetingHeader() {
         maxWidth: 430,
         zIndex: 30,
         px: 1,
-        pt: 1,
+        pt: 'max(env(safe-area-inset-top), 8px)',
       }}
     >
       <Box
