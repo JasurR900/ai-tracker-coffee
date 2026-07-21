@@ -11,9 +11,11 @@ interface CaloriesCardProps {
   remaining: number;
   /** 0..1 share of the goal already consumed */
   progress: number;
+  /** true when the daily goal is exceeded; `remaining` then holds the excess */
+  over?: boolean;
 }
 
-export function CaloriesCard({ remaining, progress }: CaloriesCardProps) {
+export function CaloriesCard({ remaining, progress, over = false }: CaloriesCardProps) {
   return (
     <Paper
       sx={{
@@ -27,11 +29,18 @@ export function CaloriesCard({ remaining, progress }: CaloriesCardProps) {
       }}
     >
       <Box>
-        <Typography sx={{ fontSize: 44, fontWeight: 800, color: colors.heading, lineHeight: 1 }}>
-          {remaining}
+        <Typography
+          sx={{
+            fontSize: 44,
+            fontWeight: 800,
+            color: over ? '#D14D5B' : colors.heading,
+            lineHeight: 1,
+          }}
+        >
+          {over ? `+${remaining}` : remaining}
         </Typography>
-        <Typography sx={{ fontSize: 15, color: 'text.secondary', mt: 1 }}>
-          Осталось калорий
+        <Typography sx={{ fontSize: 15, color: over ? '#D14D5B' : 'text.secondary', mt: 1 }}>
+          {over ? 'Сверх нормы калорий' : 'Осталось калорий'}
         </Typography>
       </Box>
       <ProgressRing
@@ -72,9 +81,11 @@ interface MacroCardProps {
   kind: 'protein' | 'carbs' | 'fats';
   /** 0..1 */
   progress: number;
+  /** true when the macro goal is exceeded; `value` then holds the excess */
+  over?: boolean;
 }
 
-export function MacroCard({ status, value, label, kind, progress }: MacroCardProps) {
+export function MacroCard({ status, value, label, kind, progress, over = false }: MacroCardProps) {
   const ringColor = kind === 'protein' ? colors.protein : kind === 'carbs' ? colors.carbs : colors.fats;
   return (
     <Paper
@@ -88,10 +99,20 @@ export function MacroCard({ status, value, label, kind, progress }: MacroCardPro
         gap: 0.25,
       }}
     >
-      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
+      <Typography
+        sx={{
+          fontSize: 12.5,
+          color: over ? '#D14D5B' : 'text.secondary',
+          fontWeight: over ? 700 : 600,
+        }}
+      >
         {status}
       </Typography>
-      <Typography sx={{ fontSize: 22, fontWeight: 800, color: colors.heading }}>{value}g</Typography>
+      <Typography
+        sx={{ fontSize: 22, fontWeight: 800, color: over ? '#D14D5B' : colors.heading }}
+      >
+        {over ? `+${value}` : value}g
+      </Typography>
       <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1 }}>{label}</Typography>
       <ProgressRing
         size={46}

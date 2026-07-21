@@ -42,21 +42,20 @@ export default function DashboardPage() {
   }, [meals]);
 
   const goal = plan ?? { calories: 2000, protein: 150, carbs: 225, fats: 56 };
-  const remaining = {
-    calories: Math.max(0, goal.calories - todayTotals.calories),
-    protein: Math.max(0, Math.round((goal.protein - todayTotals.protein) * 10) / 10),
-    carbs: Math.max(0, Math.round((goal.carbs - todayTotals.carbs) * 10) / 10),
-    fats: Math.max(0, Math.round((goal.fats - todayTotals.fats) * 10) / 10),
-  };
+
+  const caloriesLeft = goal.calories - todayTotals.calories;
+  const caloriesOver = caloriesLeft < 0;
 
   const macroCard = (kind: 'protein' | 'carbs' | 'fats', label: string) => {
-    const left = remaining[kind];
-    const done = left <= 0;
+    const left = Math.round(goal[kind] - todayTotals[kind]);
+    const over = left < 0;
+    const done = left === 0 && todayTotals[kind] > 0;
     return (
       <MacroCard
         kind={kind}
-        status={done ? 'Выполнено !' : 'Осталось'}
-        value={Math.round(left)}
+        status={over ? 'Сверх нормы !' : done ? 'Выполнено !' : 'Осталось'}
+        value={Math.abs(left)}
+        over={over}
         label={label}
         progress={goal[kind] > 0 ? Math.min(1, todayTotals[kind] / goal[kind]) : 0}
       />
@@ -69,7 +68,8 @@ export default function DashboardPage() {
       <Box sx={{ height: GREETING_HEADER_HEIGHT }} />
       <WeekStrip />
       <CaloriesCard
-        remaining={remaining.calories}
+        remaining={Math.abs(caloriesLeft)}
+        over={caloriesOver}
         progress={goal.calories > 0 ? Math.min(1, todayTotals.calories / goal.calories) : 0}
       />
       <Box sx={{ display: 'flex', gap: 1.5, px: 2.5, mt: 2 }}>
