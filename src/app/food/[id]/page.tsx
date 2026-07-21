@@ -1,12 +1,14 @@
 'use client';
 
-import { use, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import RestaurantOutlinedIcon from '@mui/icons-material/RestaurantOutlined';
+import { EditMealDialog } from '@/components/food/EditMealDialog';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAppSelector } from '@/store/hooks';
 import { colors } from '@/theme/theme';
@@ -38,6 +40,7 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
   const router = useRouter();
   const { ready } = useAuthGuard();
   const meal = useAppSelector((s) => s.meals.items.find((m) => m.id === id));
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (ready && !meal) router.replace('/dashboard');
@@ -99,9 +102,25 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
           boxShadow: '0 -10px 30px rgba(23, 26, 78, 0.08)',
         }}
       >
-        <Typography variant="h2" sx={{ fontSize: 24, mb: 2.5 }}>
-          {meal.name}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2.5 }}>
+          <Typography variant="h2" sx={{ fontSize: 24, flex: 1, minWidth: 0 }}>
+            {meal.name}
+          </Typography>
+          <IconButton
+            onClick={() => setEditOpen(true)}
+            aria-label="Редактировать блюдо"
+            sx={{
+              bgcolor: '#EEEFF5',
+              color: colors.navy,
+              width: 38,
+              height: 38,
+              flexShrink: 0,
+              '&:hover': { bgcolor: '#E4E5EC' },
+            }}
+          >
+            <EditOutlinedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Box>
 
         <Box
           sx={{
@@ -126,6 +145,8 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
           {meal.description}
         </Typography>
       </Box>
+
+      {editOpen && <EditMealDialog meal={meal} open={editOpen} onClose={() => setEditOpen(false)} />}
     </AppShell>
   );
 }

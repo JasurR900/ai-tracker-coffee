@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
 import { formatSum } from '@/lib/format';
+import { PREMIUM_PLANS } from '@/lib/premium';
 
 const FEATURES = [
   { icon: CameraAltIcon, label: 'Безлимитный AI-сканер еды и напитков' },
@@ -23,12 +24,7 @@ const FEATURES = [
   { icon: NotificationsActiveIcon, label: 'Умные напоминания' },
 ];
 
-const PLANS = [
-  { id: 'week', label: '1 неделя', price: 10000 },
-  { id: 'month', label: '1 месяц', price: 25000, badge: 'ПОПУЛЯРНЫЙ ВЫБОР' as const },
-  { id: 'quarter', label: '3 месяца', price: 75000 },
-  { id: 'year', label: '12 месяцев', price: 200000, badge: 'ЛУЧШАЯ ЦЕНА' as const },
-];
+const PLANS = PREMIUM_PLANS;
 
 export default function PremiumPage() {
   const router = useRouter();
@@ -189,7 +185,7 @@ export default function PremiumPage() {
         </Box>
 
         <PrimaryButton
-          onClick={() => router.push('/checkout')}
+          onClick={() => router.push(`/checkout?plan=${selected}`)}
           sx={{ mt: 3, mb: 1, letterSpacing: 1, fontSize: 16 }}
         >
           ПРОДОЛЖИТЬ

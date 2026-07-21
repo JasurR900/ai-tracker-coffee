@@ -1,20 +1,83 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
+import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
+import EditNoteIcon from '@mui/icons-material/EditNote';
 import { colors } from '@/theme/theme';
+import { compressImage } from '@/lib/image';
+
+export const PENDING_PHOTO_KEY = 'calai:pending-photo';
 
 interface AppShellProps {
   children: React.ReactNode;
-  /** Show the floating "+" scan button at the bottom center. */
+  /** Show the floating "+" button that expands into Камера / Галерея / Текст. */
   scanFab?: boolean;
   dark?: boolean;
 }
 
 export function AppShell({ children, scanFab = false, dark = false }: AppShellProps) {
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleGalleryFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const dataUrl = await compressImage(file);
+      sessionStorage.setItem(PENDING_PHOTO_KEY, dataUrl);
+      setMenuOpen(false);
+      router.push('/scan');
+    } catch {
+      // ignore unreadable files
+    }
+  };
+
+  const menuItem = (
+    label: string,
+    icon: React.ReactNode,
+    onClick: () => void,
+  ) => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+      <ButtonBase
+        onClick={onClick}
+        aria-label={label}
+        sx={{
+          width: 56,
+          height: 56,
+          borderRadius: '18px',
+          bgcolor: colors.navy,
+          color: '#fff',
+          boxShadow: '0 8px 20px rgba(20, 22, 91, 0.35)',
+          '&:hover': { bgcolor: colors.navyDark },
+        }}
+      >
+        {icon}
+      </ButtonBase>
+      <Typography
+        sx={{
+          bgcolor: '#fff',
+          borderRadius: '10px',
+          px: 1.5,
+          py: 0.4,
+          fontSize: 12.5,
+          fontWeight: 700,
+          color: colors.heading,
+          boxShadow: '0 4px 12px rgba(20, 22, 91, 0.15)',
+        }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
 
   return (
     <Box
@@ -41,32 +104,80 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
       </Box>
 
       {scanFab && (
-        <Box
-          sx={{
-            position: 'fixed',
-            bottom: 'max(env(safe-area-inset-bottom), 20px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 20,
-          }}
-        >
-          <ButtonBase
-            onClick={() => router.push('/scan')}
-            aria-label="Загрузить еду"
+        <>
+          {/* dim backdrop while the menu is open */}
+          {menuOpen && (
+            <Box
+              onClick={() => setMenuOpen(false)}
+              sx={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 25,
+                bgcolor: 'rgba(15, 16, 40, 0.45)',
+                backdropFilter: 'blur(2px)',
+              }}
+            />
+          )}
+
+          <Box
             sx={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              bgcolor: colors.orangeDeep,
-              color: '#fff',
-              border: '4px solid #fff',
-              boxShadow: '0 8px 20px rgba(240, 78, 35, 0.4)',
-              '&:hover': { bgcolor: colors.orange },
+              position: 'fixed',
+              bottom: 'max(env(safe-area-inset-bottom), 20px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 26,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
             }}
           >
-            <AddIcon sx={{ fontSize: 32 }} />
-          </ButtonBase>
-        </Box>
+            {menuOpen && (
+              <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 3, mb: 2.5 }}>
+                {menuItem('Галерея', <PhotoLibraryOutlinedIcon />, () =>
+                  fileInputRef.current?.click(),
+                )}
+                <Box sx={{ mb: 3 }}>
+                  {menuItem('Камера', <PhotoCameraOutlinedIcon />, () => {
+                    setMenuOpen(false);
+                    router.push('/scan');
+                  })}
+                </Box>
+                {menuItem('Текст', <EditNoteIcon />, () => {
+                  setMenuOpen(false);
+                  router.push('/add-text');
+                })}
+              </Box>
+            )}
+
+            <ButtonBase
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? 'Закрыть' : 'Добавить приём пищи'}
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: menuOpen ? colors.navy : colors.orangeDeep,
+                color: '#fff',
+                border: '4px solid #fff',
+                boxShadow: menuOpen
+                  ? '0 8px 20px rgba(20, 22, 91, 0.4)'
+                  : '0 8px 20px rgba(240, 78, 35, 0.4)',
+                transition: 'background-color 0.2s ease',
+                '&:hover': { bgcolor: menuOpen ? colors.navyDark : colors.orange },
+              }}
+            >
+              {menuOpen ? <CloseIcon sx={{ fontSize: 30 }} /> : <AddIcon sx={{ fontSize: 32 }} />}
+            </ButtonBase>
+          </Box>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleGalleryFile}
+          />
+        </>
       )}
     </Box>
   );

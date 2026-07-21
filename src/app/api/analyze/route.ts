@@ -51,24 +51,35 @@ function normalize(parsed: Partial<FoodAnalysis>): FoodAnalysis {
   };
 }
 
-async function analyzeWithGemini(
-  apiKey: string,
-  mimeType: string,
-  data: string,
-): Promise<FoodAnalysis> {
+const TEXT_PROMPT = `Ты — профессиональный нутрициолог. Пользователь описал приём пищи текстом.
+Определи блюдо и оцени его пищевую ценность для описанной порции (если размер порции не указан — возьми стандартную).
+Ответь строго на русском языке.
+Если текст не описывает еду или напиток, установи isFood = false, а остальные поля заполни нулями и пустыми строками.
+
+description — 2–3 предложения СТРОГО о составе и питательной ценности блюда:
+из чего оно состоит, что даёт организму, насколько насыщенное и кому/когда подходит.
+ЗАПРЕЩЕНО упоминать посуду, подачу, оформление и «аппетитность».
+
+Описание пользователя: `;
+
+type AnalyzeInput =
+  | { kind: 'image'; mimeType: string; data: string }
+  | { kind: 'text'; text: string };
+
+async function analyzeWithGemini(apiKey: string, input: AnalyzeInput): Promise<FoodAnalysis> {
   const ai = new GoogleGenAI({ apiKey });
   let lastError: unknown = null;
+
+  const parts =
+    input.kind === 'image'
+      ? [{ inlineData: { mimeType: input.mimeType, data: input.data } }, { text: PROMPT }]
+      : [{ text: TEXT_PROMPT + input.text }];
 
   for (const model of MODEL_CANDIDATES) {
     try {
       const response = await ai.models.generateContent({
         model,
-        contents: [
-          {
-            role: 'user',
-            parts: [{ inlineData: { mimeType, data } }, { text: PROMPT }],
-          },
-        ],
+        contents: [{ role: 'user', parts }],
         config: {
           responseMimeType: 'application/json',
           responseSchema: RESPONSE_SCHEMA,
@@ -113,21 +124,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'GEMINI_API_KEY is not configured' }, { status: 500 });
   }
 
-  let image: string;
+  let input: AnalyzeInput;
   try {
     const body = await request.json();
-    image = body.image;
-    if (typeof image !== 'string' || image.length === 0) throw new Error('bad image');
+    if (typeof body.text === 'string' && body.text.trim().length > 0) {
+      input = { kind: 'text', text: body.text.trim().slice(0, 1000) };
+    } else if (typeof body.image === 'string' && body.image.length > 0) {
+      const match = body.image.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+      input = {
+        kind: 'image',
+        mimeType: match ? match[1] : 'image/jpeg',
+        data: match ? match[2] : body.image,
+      };
+    } else {
+      throw new Error('bad input');
+    }
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const match = image.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-  const mimeType = match ? match[1] : 'image/jpeg';
-  const data = match ? match[2] : image;
-
   try {
-    const analysis = await analyzeWithGemini(apiKey, mimeType, data);
+    const analysis = await analyzeWithGemini(apiKey, input);
     return NextResponse.json({ ...analysis, source: 'ai' });
   } catch (error) {
     console.error('Gemini analyze error:', error);

@@ -133,6 +133,24 @@ export async function insertMeal(
   return rowToMeal(data as MealRow);
 }
 
+export async function updateMealRow(
+  mealId: string,
+  fields: Pick<Meal, 'name' | 'calories' | 'protein' | 'fats' | 'carbs' | 'description'>,
+): Promise<void> {
+  const { error } = await getSupabase()
+    .from('meals')
+    .update({
+      name: fields.name,
+      calories: fields.calories,
+      protein: fields.protein,
+      fats: fields.fats,
+      carbs: fields.carbs,
+      description: fields.description,
+    })
+    .eq('id', mealId);
+  if (error) throw new Error(error.message);
+}
+
 export async function deleteMeals(userId: string): Promise<void> {
   await getSupabase().from('meals').delete().eq('user_id', userId);
 }

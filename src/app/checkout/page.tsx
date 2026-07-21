@@ -1,38 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import ButtonBase from '@mui/material/ButtonBase';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
-import PlaceIcon from '@mui/icons-material/Place';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
 import { formatSum } from '@/lib/format';
-
-const ITEMS = [
-  { label: 'Напиток (Латте L)', price: 15000 },
-  { label: 'Сироп', price: 2000 },
-];
+import { getPlan } from '@/lib/premium';
 
 const COUPONS = [
   { id: 'sub', label: 'Подписка AI Трекер Калорий на 3 МЕСЯЦА' },
   { id: 'drink', label: 'Купон на бесплатный напиток' },
 ];
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plan = getPlan(searchParams.get('plan'));
   const [coupon, setCoupon] = useState('sub');
   const [paid, setPaid] = useState(false);
-
-  const total = ITEMS.reduce((sum, i) => sum + i.price, 0);
 
   return (
     <AppShell>
@@ -233,7 +228,7 @@ export default function CheckoutPage() {
           <Box sx={{ height: 8 }} />
         </Paper>
 
-        {/* pickup point */}
+        {/* selected subscription */}
         <Paper
           sx={{
             borderRadius: '16px',
@@ -242,64 +237,50 @@ export default function CheckoutPage() {
             display: 'flex',
             alignItems: 'center',
             gap: 1.75,
-            bgcolor: '#F1F2F7',
-            boxShadow: 'none',
+            border: `1px solid ${colors.divider}`,
           }}
         >
           <Box
             sx={{
-              width: 48,
-              height: 48,
-              borderRadius: '14px',
-              bgcolor: colors.orangeDeep,
+              width: 44,
+              height: 44,
+              borderRadius: '12px',
+              bgcolor: '#FEEDE5',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <PlaceIcon sx={{ color: '#fff' }} />
+            <WorkspacePremiumIcon sx={{ color: colors.orangeDeep }} />
           </Box>
           <Box sx={{ flex: 1 }}>
-            <Typography
-              sx={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, color: colors.orangeDeep }}
-            >
-              ПУНКТ ВЫДАЧИ
+            <Typography sx={{ fontWeight: 800, fontSize: 15.5, color: colors.heading }}>
+              Premium Доступ
             </Typography>
-            <Typography sx={{ fontSize: 15.5, fontWeight: 800, color: colors.heading, mt: 0.25 }}>
-              Автомат №42 • БЦ Панорама
-            </Typography>
+            <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{plan.label}</Typography>
           </Box>
-          <ChevronRightIcon sx={{ color: '#9C9FAD' }} />
+          <Typography sx={{ fontSize: 15.5, fontWeight: 700, color: colors.heading }}>
+            {formatSum(plan.price)}
+          </Typography>
         </Paper>
 
-        {/* order items */}
-        <Box sx={{ mt: 2.5 }}>
-          {ITEMS.map((item) => (
-            <Box key={item.label} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.75 }}>
-              <Typography sx={{ fontSize: 15, color: '#B4B7C3' }}>{item.label}</Typography>
-              <Typography sx={{ fontSize: 15, color: '#B4B7C3', fontWeight: 600 }}>
-                {formatSum(item.price)}
-              </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            mt: 2.5,
+            pt: 2,
+            borderTop: `1px solid ${colors.divider}`,
+          }}
+        >
+          <Typography sx={{ fontSize: 18, fontWeight: 800, color: colors.heading }}>Итого</Typography>
+          <Typography sx={{ fontSize: 26, fontWeight: 800, color: colors.navy }}>
+            {plan.price.toLocaleString('ru-RU').replace(/,/g, ' ')}{' '}
+            <Box component="span" sx={{ fontSize: 15, fontWeight: 600 }}>
+              сум
             </Box>
-          ))}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              mt: 1.5,
-              pt: 2,
-              borderTop: `1px solid ${colors.divider}`,
-            }}
-          >
-            <Typography sx={{ fontSize: 18, fontWeight: 800, color: colors.heading }}>Итого</Typography>
-            <Typography sx={{ fontSize: 26, fontWeight: 800, color: colors.navy }}>
-              {total.toLocaleString('ru-RU').replace(/,/g, ' ')}{' '}
-              <Box component="span" sx={{ fontSize: 15, fontWeight: 600 }}>
-                сум
-              </Box>
-            </Typography>
-          </Box>
+          </Typography>
         </Box>
 
         <PrimaryButton onClick={() => setPaid(true)} sx={{ mt: 2.5, mb: 1, letterSpacing: 1.5 }}>
@@ -318,5 +299,13 @@ export default function CheckoutPage() {
         </Alert>
       </Snackbar>
     </AppShell>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

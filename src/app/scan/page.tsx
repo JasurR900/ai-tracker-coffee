@@ -12,7 +12,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
-import { AppShell } from '@/components/layout/AppShell';
+import { AppShell, PENDING_PHOTO_KEY } from '@/components/layout/AppShell';
 import { useAppDispatch, useAppStore } from '@/store/hooks';
 import { addMeal } from '@/store/slices/mealsSlice';
 import { compressImage } from '@/lib/image';
@@ -103,6 +103,16 @@ export default function ScanPage() {
     },
     [dispatch, router, store],
   );
+
+  // a photo picked from the gallery FAB menu arrives via sessionStorage
+  useEffect(() => {
+    const pending = sessionStorage.getItem(PENDING_PHOTO_KEY);
+    if (pending) {
+      sessionStorage.removeItem(PENDING_PHOTO_KEY);
+      void analyze(pending);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCapture = useCallback(async () => {
     const video = videoRef.current;
