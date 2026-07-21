@@ -16,12 +16,14 @@ interface ProfileRow {
   goal: ProfileState['goal'];
   diet: ProfileState['diet'];
   plan: ProfileState['plan'];
+  subscription: ProfileState['subscription'];
   auto_track_orders: boolean | null;
   onboarding_completed: boolean | null;
 }
 
 function rowToProfile(row: ProfileRow): ProfileState {
   return {
+    subscription: row.subscription ?? null,
     gender: row.gender ?? null,
     birthDate: row.birth_date ?? initialProfileState.birthDate,
     heightCm: row.height_cm ?? initialProfileState.heightCm,
@@ -61,6 +63,7 @@ export async function upsertProfile(
     goal: profile.goal,
     diet: profile.diet,
     plan: profile.plan,
+    subscription: profile.subscription,
     auto_track_orders: profile.autoTrackOrders,
     onboarding_completed: profile.onboardingCompleted,
     updated_at: new Date().toISOString(),
@@ -114,6 +117,7 @@ export async function fetchMeals(userId: string): Promise<Meal[]> {
 export async function insertMeal(
   userId: string,
   meal: Omit<Meal, 'id' | 'createdAt'>,
+  createdAt?: string,
 ): Promise<Meal> {
   const { data, error } = await getSupabase()
     .from('meals')
@@ -126,11 +130,27 @@ export async function insertMeal(
       carbs: meal.carbs,
       description: meal.description,
       photo_url: meal.photo,
+      ...(createdAt ? { created_at: createdAt } : {}),
     })
     .select()
     .single();
   if (error || !data) throw new Error(error?.message ?? 'Insert failed');
   return rowToMeal(data as MealRow);
+}
+
+/** Deletes a meal row and its photo in storage (if any). */
+export async function deleteMealRow(mealId: string, photoUrl: string | null): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from('meals').delete().eq('id', mealId);
+  if (error) throw new Error(error.message);
+  if (photoUrl) {
+    const marker = '/meal-photos/';
+    const idx = photoUrl.indexOf(marker);
+    if (idx !== -1) {
+      const path = photoUrl.slice(idx + marker.length);
+      await supabase.storage.from('meal-photos').remove([path]);
+    }
+  }
 }
 
 export async function updateMealRow(

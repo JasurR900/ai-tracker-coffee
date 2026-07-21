@@ -16,7 +16,15 @@ export interface NutritionPlan {
   fats: number;
 }
 
+export interface Subscription {
+  planId: string;
+  label: string;
+  paidAt: string; // ISO date
+  expiresAt: string; // ISO date
+}
+
 export interface ProfileState {
+  subscription: Subscription | null;
   gender: Gender | null;
   birthDate: BirthDate;
   heightCm: number;

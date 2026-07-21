@@ -1,12 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import EditNoteIcon from '@mui/icons-material/EditNote';
@@ -17,13 +19,14 @@ export const PENDING_PHOTO_KEY = 'calai:pending-photo';
 
 interface AppShellProps {
   children: React.ReactNode;
-  /** Show the floating "+" button that expands into Камера / Галерея / Текст. */
+  /** Show the bottom bar with home / "+" (Камера-Галерея-Текст) / settings. */
   scanFab?: boolean;
   dark?: boolean;
 }
 
 export function AppShell({ children, scanFab = false, dark = false }: AppShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,11 +44,7 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
     }
   };
 
-  const menuItem = (
-    label: string,
-    icon: React.ReactNode,
-    onClick: () => void,
-  ) => (
+  const menuItem = (label: string, icon: React.ReactNode, onClick: () => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
       <ButtonBase
         onClick={onClick}
@@ -79,6 +78,27 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
     </Box>
   );
 
+  const sideButton = (
+    label: string,
+    icon: React.ReactNode,
+    href: string,
+    active: boolean,
+  ) => (
+    <ButtonBase
+      onClick={() => router.push(href)}
+      aria-label={label}
+      sx={{
+        width: 52,
+        height: 52,
+        borderRadius: '16px',
+        color: active ? colors.navy : '#B4B7C3',
+        '&:hover': { bgcolor: 'rgba(27,27,109,0.05)' },
+      }}
+    >
+      {icon}
+    </ButtonBase>
+  );
+
   return (
     <Box
       sx={{
@@ -95,7 +115,7 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
       <Box
         sx={{
           flex: 1,
-          pb: scanFab ? '104px' : 0,
+          pb: scanFab ? '116px' : 0,
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -119,20 +139,28 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
             />
           )}
 
+          {/* bottom bar */}
           <Box
             sx={{
               position: 'fixed',
-              bottom: 'max(env(safe-area-inset-bottom), 20px)',
+              bottom: 0,
               left: '50%',
               transform: 'translateX(-50%)',
+              width: '100%',
+              maxWidth: 430,
               zIndex: 26,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
             }}
           >
             {menuOpen && (
-              <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 3, mb: 2.5 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                  gap: 3,
+                  mb: 2.5,
+                }}
+              >
                 {menuItem('Галерея', <PhotoLibraryOutlinedIcon />, () =>
                   fileInputRef.current?.click(),
                 )}
@@ -149,25 +177,56 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
               </Box>
             )}
 
-            <ButtonBase
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? 'Закрыть' : 'Добавить приём пищи'}
+            <Box
               sx={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                bgcolor: menuOpen ? colors.navy : colors.orangeDeep,
-                color: '#fff',
-                border: '4px solid #fff',
-                boxShadow: menuOpen
-                  ? '0 8px 20px rgba(20, 22, 91, 0.4)'
-                  : '0 8px 20px rgba(240, 78, 35, 0.4)',
-                transition: 'background-color 0.2s ease',
-                '&:hover': { bgcolor: menuOpen ? colors.navyDark : colors.orange },
+                position: 'relative',
+                bgcolor: '#fff',
+                borderRadius: '24px 24px 0 0',
+                boxShadow: '0 -8px 28px rgba(23, 26, 78, 0.10)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                px: 4,
+                pt: 1.25,
+                pb: 'max(env(safe-area-inset-bottom), 12px)',
               }}
             >
-              {menuOpen ? <CloseIcon sx={{ fontSize: 30 }} /> : <AddIcon sx={{ fontSize: 32 }} />}
-            </ButtonBase>
+              {sideButton(
+                'Главная',
+                <HomeOutlinedIcon sx={{ fontSize: 26 }} />,
+                '/dashboard',
+                pathname === '/dashboard',
+              )}
+
+              {/* raised center button */}
+              <ButtonBase
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label={menuOpen ? 'Закрыть' : 'Добавить приём пищи'}
+                sx={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  mt: -4.5,
+                  bgcolor: menuOpen ? colors.navy : colors.orangeDeep,
+                  color: '#fff',
+                  border: '4px solid #fff',
+                  boxShadow: menuOpen
+                    ? '0 8px 20px rgba(20, 22, 91, 0.4)'
+                    : '0 8px 20px rgba(240, 78, 35, 0.4)',
+                  transition: 'background-color 0.2s ease',
+                  '&:hover': { bgcolor: menuOpen ? colors.navyDark : colors.orange },
+                }}
+              >
+                {menuOpen ? <CloseIcon sx={{ fontSize: 30 }} /> : <AddIcon sx={{ fontSize: 32 }} />}
+              </ButtonBase>
+
+              {sideButton(
+                'Настройки',
+                <SettingsOutlinedIcon sx={{ fontSize: 26 }} />,
+                '/profile',
+                pathname === '/profile',
+              )}
+            </Box>
           </Box>
 
           <input

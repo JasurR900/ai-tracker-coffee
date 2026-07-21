@@ -11,6 +11,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import TuneIcon from '@mui/icons-material/Tune';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -61,8 +63,43 @@ export default function ProfilePage() {
     ['Диета', profile.diet ? DIET_LABELS[profile.diet] : '—'],
   ];
 
+  const menuCard = (
+    icon: React.ReactNode,
+    title: string,
+    onClick: () => void,
+    subtitle?: string,
+  ) => (
+    <ButtonBase
+      onClick={onClick}
+      sx={{
+        width: '100%',
+        borderRadius: '16px',
+        bgcolor: '#fff',
+        p: 2,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        textAlign: 'left',
+        boxShadow: '0 4px 16px rgba(23, 26, 78, 0.05)',
+      }}
+    >
+      {icon}
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontWeight: 700, fontSize: 15.5, color: colors.heading }}>
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
+            {subtitle}
+          </Typography>
+        )}
+      </Box>
+      <ChevronRightIcon sx={{ color: '#9C9FAD' }} />
+    </ButtonBase>
+  );
+
   return (
-    <AppShell>
+    <AppShell scanFab>
       <PageHeader title="Профиль" onBack={() => router.push('/dashboard')} elevated />
 
       <Box sx={{ px: 2.5, pt: 3 }}>
@@ -115,66 +152,35 @@ export default function ProfilePage() {
         </Paper>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2.5 }}>
-          <ButtonBase
-            onClick={() => router.push('/premium')}
-            sx={{
-              width: '100%',
-              borderRadius: '16px',
-              bgcolor: '#fff',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              textAlign: 'left',
-              boxShadow: '0 4px 16px rgba(23, 26, 78, 0.05)',
-            }}
-          >
-            <WorkspacePremiumIcon sx={{ color: colors.orangeDeep }} />
-            <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 15.5, color: colors.heading }}>
-              Premium Доступ
-            </Typography>
-            <ChevronRightIcon sx={{ color: '#9C9FAD' }} />
-          </ButtonBase>
-          <ButtonBase
-            onClick={() => router.push('/onboarding/1')}
-            sx={{
-              width: '100%',
-              borderRadius: '16px',
-              bgcolor: '#fff',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              textAlign: 'left',
-              boxShadow: '0 4px 16px rgba(23, 26, 78, 0.05)',
-            }}
-          >
-            <TuneIcon sx={{ color: colors.navy }} />
-            <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 15.5, color: colors.heading }}>
-              Изменить параметры
-            </Typography>
-            <ChevronRightIcon sx={{ color: '#9C9FAD' }} />
-          </ButtonBase>
-          <ButtonBase
-            onClick={handleLogout}
-            sx={{
-              width: '100%',
-              borderRadius: '16px',
-              bgcolor: '#fff',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              textAlign: 'left',
-              boxShadow: '0 4px 16px rgba(23, 26, 78, 0.05)',
-            }}
-          >
-            <LogoutIcon sx={{ color: '#C64A5B' }} />
-            <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 15.5, color: colors.heading }}>
-              Выйти из аккаунта
-            </Typography>
-            <ChevronRightIcon sx={{ color: '#9C9FAD' }} />
-          </ButtonBase>
+          {menuCard(
+            <WorkspacePremiumIcon sx={{ color: colors.orangeDeep }} />,
+            'Premium Доступ',
+            () => router.push('/premium'),
+          )}
+          {menuCard(
+            <CardMembershipIcon sx={{ color: colors.navy }} />,
+            'Статус подписки',
+            () => router.push('/subscription'),
+            profile.subscription ? 'Активна' : 'Нет активной подписки',
+          )}
+          {menuCard(
+            <ForumOutlinedIcon sx={{ color: colors.navy }} />,
+            'Поддержка',
+            () => {
+              window.location.href = 'mailto:support@pointcoffee.uz?subject=AI%20Трекер%20Калорий';
+            },
+            'Напишите нам, если нужна помощь',
+          )}
+          {menuCard(
+            <TuneIcon sx={{ color: colors.navy }} />,
+            'Изменить параметры',
+            () => router.push('/onboarding/1'),
+          )}
+          {menuCard(
+            <LogoutIcon sx={{ color: '#C64A5B' }} />,
+            'Выйти из аккаунта',
+            handleLogout,
+          )}
         </Box>
 
         <Button

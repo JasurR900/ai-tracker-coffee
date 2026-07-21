@@ -15,7 +15,10 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
 import { formatSum } from '@/lib/format';
-import { getPlan } from '@/lib/premium';
+import { createSubscription, getPlan } from '@/lib/premium';
+import { useAppDispatch, useAppStore } from '@/store/hooks';
+import { setSubscription } from '@/store/slices/profileSlice';
+import { upsertProfile } from '@/lib/supabase/db';
 
 const COUPONS = [
   { id: 'sub', label: 'Подписка AI Трекер Калорий на 3 МЕСЯЦА' },
@@ -24,10 +27,23 @@ const COUPONS = [
 
 function CheckoutContent() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const store = useAppStore();
   const searchParams = useSearchParams();
   const plan = getPlan(searchParams.get('plan'));
   const [coupon, setCoupon] = useState('sub');
   const [paid, setPaid] = useState(false);
+
+  const handlePay = () => {
+    const subscription = createSubscription(plan);
+    dispatch(setSubscription(subscription));
+    const { profile, app } = store.getState();
+    if (app.userId) {
+      upsertProfile(app.userId, profile, app.username).catch(() => undefined);
+    }
+    setPaid(true);
+    setTimeout(() => router.push('/subscription'), 1200);
+  };
 
   return (
     <AppShell>
@@ -283,7 +299,7 @@ function CheckoutContent() {
           </Typography>
         </Box>
 
-        <PrimaryButton onClick={() => setPaid(true)} sx={{ mt: 2.5, mb: 1, letterSpacing: 1.5 }}>
+        <PrimaryButton onClick={handlePay} sx={{ mt: 2.5, mb: 1, letterSpacing: 1.5 }}>
           ОПЛАТИТЬ
         </PrimaryButton>
       </Box>

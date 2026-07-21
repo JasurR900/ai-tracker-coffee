@@ -6,10 +6,12 @@ import type {
   Goal,
   NutritionPlan,
   ProfileState,
+  Subscription,
   Workouts,
 } from '@/types';
 
 export const initialProfileState: ProfileState = {
+  subscription: null,
   gender: null,
   birthDate: { year: 2000, month: 0, day: 1 },
   heightCm: 170,
@@ -52,6 +54,12 @@ const profileSlice = createSlice({
       state.plan = action.payload;
       state.onboardingCompleted = true;
     },
+    updatePlan: (state, action: PayloadAction<NutritionPlan>) => {
+      state.plan = action.payload;
+    },
+    setSubscription: (state, action: PayloadAction<Subscription | null>) => {
+      state.subscription = action.payload;
+    },
     setAutoTrackOrders: (state, action: PayloadAction<boolean>) => {
       state.autoTrackOrders = action.payload;
     },
@@ -69,6 +77,8 @@ export const {
   setGoal,
   setDiet,
   setPlan,
+  updatePlan,
+  setSubscription,
   setAutoTrackOrders,
   resetProfile,
 } = profileSlice.actions;

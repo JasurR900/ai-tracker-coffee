@@ -1,7 +1,7 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, use, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -35,12 +35,12 @@ function StatCell({ value, label }: { value: string; label: string }) {
   );
 }
 
-export default function FoodDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+function FoodDetailContent({ id }: { id: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { ready } = useAuthGuard();
   const meal = useAppSelector((s) => s.meals.items.find((m) => m.id === id));
-  const [editOpen, setEditOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(searchParams.get('edit') === '1');
 
   useEffect(() => {
     if (ready && !meal) router.replace('/dashboard');
@@ -148,5 +148,14 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
 
       {editOpen && <EditMealDialog meal={meal} open={editOpen} onClose={() => setEditOpen(false)} />}
     </AppShell>
+  );
+}
+
+export default function FoodDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  return (
+    <Suspense fallback={null}>
+      <FoodDetailContent id={id} />
+    </Suspense>
   );
 }
