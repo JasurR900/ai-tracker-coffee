@@ -111,6 +111,7 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
   return (
     <Box
       sx={{
+        width: '100%',
         maxWidth: 430,
         mx: 'auto',
         minHeight: '100dvh',
