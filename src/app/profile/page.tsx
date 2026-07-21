@@ -10,19 +10,19 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import PersonIcon from '@mui/icons-material/Person';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import TuneIcon from '@mui/icons-material/Tune';
-import LogoutIcon from '@mui/icons-material/Logout';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import { AppShell } from '@/components/layout/AppShell';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { resetProfile } from '@/store/slices/profileSlice';
 import { clearMeals } from '@/store/slices/mealsSlice';
+import { resetSubscription } from '@/store/slices/subscriptionSlice';
 import { getAge } from '@/lib/nutrition';
 import { colors } from '@/theme/theme';
-import { getSupabase } from '@/lib/supabase/client';
-import { deleteMeals, deleteProfile } from '@/lib/supabase/db';
+import { deleteAllMeals, deleteProfile } from '@/lib/api/client';
+import { formatPhoneDisplay } from '@/lib/formatPhone';
 import { useAuthGuard } from '@/lib/useAuthGuard';
+import { openExternalUrl } from '@/lib/nativeBridge';
 
 const GOAL_LABELS = { lose: 'Снижение веса', maintain: 'Поддерживать вес', gain: 'Набрать массу' };
 const DIET_LABELS = {
@@ -37,21 +37,19 @@ export default function ProfilePage() {
   useAuthGuard();
   const dispatch = useAppDispatch();
   const profile = useAppSelector((s) => s.profile);
-  const userId = useAppSelector((s) => s.app.userId);
-  const username = useAppSelector((s) => s.app.username);
+  const subscriptionActive = useAppSelector((s) => s.subscription.subscriptionActive);
+  const userName = useAppSelector((s) => s.app.userName);
+  const userPhone = useAppSelector((s) => s.app.userPhone);
+  const userAvatarUrl = useAppSelector((s) => s.app.userAvatarUrl);
+  const displayName = userName || 'Мой профиль';
+  const displayPhone = formatPhoneDisplay(userPhone);
 
   const handleReset = async () => {
-    if (userId) {
-      await Promise.all([deleteMeals(userId), deleteProfile(userId)]).catch(() => undefined);
-    }
+    await Promise.all([deleteAllMeals(), deleteProfile()]).catch(() => undefined);
     dispatch(resetProfile());
     dispatch(clearMeals());
+    dispatch(resetSubscription());
     router.push('/onboarding/1');
-  };
-
-  const handleLogout = async () => {
-    await getSupabase().auth.signOut();
-    router.push('/auth');
   };
 
   const rows: Array<[string, string]> = [
@@ -100,9 +98,7 @@ export default function ProfilePage() {
 
   return (
     <AppShell scanFab>
-      <PageHeader title="Профиль" onBack={() => router.push('/dashboard')} elevated />
-
-      <Box sx={{ px: 2.5, pt: 3 }}>
+      <Box sx={{ px: 2.5, pt: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
           <Box
             sx={{
@@ -113,18 +109,28 @@ export default function ProfilePage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden',
             }}
           >
-            <PersonIcon sx={{ fontSize: 44, color: colors.navy }} />
+            {userAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={userAvatarUrl}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <PersonIcon sx={{ fontSize: 44, color: colors.navy }} />
+            )}
           </Box>
           <Typography sx={{ mt: 1.5, fontSize: 19, fontWeight: 800, color: colors.heading }}>
-            Мой профиль
+            {displayName}
           </Typography>
-          {username && (
-            <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.5 }}>
-              @{username}
+          {displayPhone ? (
+            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.35 }}>
+              {displayPhone}
             </Typography>
-          )}
+          ) : null}
           {profile.plan && (
             <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.25 }}>
               Дневная цель: {profile.plan.calories} калорий
@@ -161,25 +167,18 @@ export default function ProfilePage() {
             <CardMembershipIcon sx={{ color: colors.navy }} />,
             'Статус подписки',
             () => router.push('/subscription'),
-            profile.subscription ? 'Активна' : 'Нет активной подписки',
+            subscriptionActive ? 'Активна' : 'Нет активной подписки',
           )}
           {menuCard(
             <ForumOutlinedIcon sx={{ color: colors.navy }} />,
             'Поддержка',
-            () => {
-              window.location.href = 'mailto:support@pointcoffee.uz?subject=AI%20Трекер%20Калорий';
-            },
+            () => openExternalUrl('https://t.me/pointcoffeeuz'),
             'Напишите нам, если нужна помощь',
           )}
           {menuCard(
             <TuneIcon sx={{ color: colors.navy }} />,
             'Изменить параметры',
             () => router.push('/onboarding/1'),
-          )}
-          {menuCard(
-            <LogoutIcon sx={{ color: '#C64A5B' }} />,
-            'Выйти из аккаунта',
-            handleLogout,
           )}
         </Box>
 

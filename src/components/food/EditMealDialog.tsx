@@ -13,7 +13,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
 import { useAppDispatch } from '@/store/hooks';
 import { updateMeal } from '@/store/slices/mealsSlice';
-import { updateMealRow } from '@/lib/supabase/db';
+import { patchMeal } from '@/lib/api/client';
 import type { Meal } from '@/types';
 
 const fieldSx = {
@@ -64,7 +64,7 @@ export function EditMealDialog({ meal, open, onClose }: EditMealDialogProps) {
     setSaving(true);
     setError(null);
     try {
-      await updateMealRow(meal.id, changes);
+      await patchMeal(meal.id, changes);
       dispatch(updateMeal({ id: meal.id, changes }));
       onClose();
     } catch {

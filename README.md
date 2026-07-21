@@ -1,6 +1,8 @@
 # Счётчик калорий — AI Трекер (Cal AI)
 
-AI-kaloriya trekeri webapp: Next.js 16 + TypeScript + MUI v9 + Redux Toolkit + Google Gemini + Supabase (auth, database, storage).
+AI-kaloriya trekeri webapp: Next.js 16 + TypeScript + MUI v9 + Redux Toolkit.
+Backend: Point Coffee Core REST API (`NEXT_PUBLIC_API_URL`). Auth: JWT from
+the native Point Coffee app WebView (no separate login).
 
 ## Sahifalar
 
@@ -11,66 +13,49 @@ AI-kaloriya trekeri webapp: Next.js 16 + TypeScript + MUI v9 + Redux Toolkit + G
 | `/processing` | 99% — plan hisoblash animatsiyasi |
 | `/plan` | «Ваш персональный план готов!» — kunlik KBJU normalar |
 | `/dashboard` | Asosiy ekran — qolgan kaloriya, makrolar, ovqatlar tarixi |
-| `/scan` | Kamera / galereya → Gemini AI tahlil |
+| `/scan` | Kamera / galereya → Core API `/analyze` |
 | `/food/[id]` | Ovqat detali — KBJU + AI tavsifi |
-| `/premium` | Premium tariflar |
-| `/checkout` | To'lov (demo) |
-| `/profile`, `/loyalty`, `/maps` | Profil va stub sahifalar |
+| `/premium` | Trial + pullik tariflar |
+| `/checkout` | Real to'lov (wallet / click / payme / uzum) |
+| `/subscription` | Obuna holati |
+| `/profile` | Profil |
 
 ## Ishga tushirish
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # production build
-npm start        # production server
+npm run dev      # http://0.0.0.0:3000 (LAN: http://192.168.1.159:3000)
+npm run build
+npm start
 ```
 
 ## Muhit sozlamalari
 
-`.env.local` (`.env.example`dan nusxa oling):
+`.env.local`:
 
 ```
-GEMINI_API_KEY=<gemini-key>
-NEXT_PUBLIC_SUPABASE_URL=<supabase-url>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+NEXT_PUBLIC_API_URL=https://core.pointcoffee.uz
 ```
 
-Yangi Supabase proyekt uchun schema (jadvallar, RLS, storage bucket) bir marta o'rnatiladi:
+JWT mobile WebView orqali inject qilinadi (`window.__COFFEE_JWT__` yoki
+`postMessage` `{type:'AUTH_TOKEN', token}`).
 
-```bash
-POSTGRES_URL_NON_POOLING="postgres://..." node scripts/setup-db.mjs
-```
+## API shartnomasi
 
-> **Muhim:** Hozirgi kalitning free-tier kvotasi 0 va Gemini 2.5+/3.x modellarga
-> ruxsati yo'q. Kalit ishlamasa, `/api/analyze` avtomatik **fallback rejimga**
-> o'tadi (o'rtacha porsiya bo'yicha taxminiy baho, tavsifda ogohlantirish bilan).
-> To'liq AI tahlil uchun [Google AI Studio](https://aistudio.google.com/apikey)dan
-> kvotali yangi kalit oling — kod `gemini-2.5-flash → gemini-2.0-flash →
-> gemini-2.0-flash-lite` zanjirini avtomatik sinaydi.
+Qarang: [`docs/NUTRITION_MOBILE.md`](docs/NUTRITION_MOBILE.md).
 
 ## Arxitektura
 
 ```
 src/
-├── app/                    # Next.js App Router sahifalari + /api/analyze
+├── app/                    # Next.js App Router
 ├── components/
-│   ├── layout/             # AppShell, BottomNav, PageHeader
-│   ├── onboarding/         # WheelPicker, HeightRuler, WeightSlider, steps/
-│   ├── dashboard/          # WeekStrip, CaloriesCard, MealCard
-│   └── ui/                 # PrimaryButton, SelectCard, ProgressRing, ikonlar
-├── store/                  # Redux Toolkit: profile / meals / app slicelari
-├── lib/                    # nutrition (Mifflin-St Jeor), storage, image, format
-├── theme/                  # MUI tema (Manrope, navy #1B1B6D, orange #F94C10)
-└── types/                  # Umumiy TypeScript tiplar
+├── store/                  # Redux: profile / meals / app / subscription
+├── lib/api/                # REST client + JWT bridge
+├── theme/
+└── types/
 ```
 
-- **Auth:** Supabase email/parol. Registratsiya server route (`/api/auth/register`)
-  orqali service-role bilan tasdiqlangan user yaratadi — email-confirmation shart emas.
-- **Persistensiya:** profil va ovqatlar Supabase Postgres'da (`profiles`, `meals`
-  jadvallari, RLS bilan har kim faqat o'z ma'lumotini ko'radi), sessiya reload'dan
-  keyin ham saqlanadi.
-- **Rasmlar:** clientda 640px/JPEG'ga siqiladi → Supabase Storage `meal-photos`
-  bucket'iga yuklanadi (public URL, foydalanuvchi faqat o'z papkasiga yozadi).
-- **Plan hisobi:** Mifflin–St Jeor BMR × faollik × maqsad; makrolar dieta bo'yicha.
+- **Auth:** Coffee mobile JWT (Bearer). Alohida login yo'q.
+- **Profil / meals / upload / analyze / subscriptions:** Core REST API.
+- **Plan hisobi:** Mifflin–St Jeor (client-side), `PUT /profile` orqali saqlanadi.

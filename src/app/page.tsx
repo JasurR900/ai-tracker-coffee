@@ -1,24 +1,37 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { AppShell } from '@/components/layout/AppShell';
+import { BootLoader } from '@/components/layout/BootLoader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { useAppSelector } from '@/store/hooks';
+import { navigate } from '@/lib/navigate';
 
 export default function WelcomePage() {
   const router = useRouter();
   const onboardingCompleted = useAppSelector((s) => s.profile.onboardingCompleted);
+  const plan = useAppSelector((s) => s.profile.plan);
   const hydrated = useAppSelector((s) => s.app.hydrated);
   const authenticated = useAppSelector((s) => s.app.authenticated);
 
-  const handleStart = () => {
-    if (!hydrated || !authenticated) {
-      router.push('/auth');
-    } else {
-      router.push(onboardingCompleted ? '/dashboard' : '/onboarding/1');
+  const onboardingDone = onboardingCompleted || plan !== null;
+
+  useEffect(() => {
+    if (hydrated && authenticated) {
+      navigate(router, onboardingDone ? '/dashboard' : '/onboarding/1', true);
     }
+  }, [hydrated, authenticated, onboardingDone, router]);
+
+  // Wait for JWT + profile hydrate, or while redirecting to home/onboarding.
+  if (!hydrated || authenticated) {
+    return <BootLoader label="Открываем трекер…" />;
+  }
+
+  const handleStart = () => {
+    navigate(router, '/onboarding/1');
   };
 
   return (
@@ -48,7 +61,6 @@ export default function WelcomePage() {
           overflow: 'hidden',
         }}
       >
-        {/* soft background glows */}
         <Box
           sx={{
             position: 'absolute',

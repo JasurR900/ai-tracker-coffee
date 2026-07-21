@@ -8,13 +8,12 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import ButtonBase from '@mui/material/ButtonBase';
 import { AppShell } from '@/components/layout/AppShell';
-import { GreetingHeader, GREETING_HEADER_HEIGHT } from '@/components/dashboard/GreetingHeader';
 import { WeekStrip, dateKey } from '@/components/dashboard/WeekStrip';
 import { CaloriesCard, MacroCard } from '@/components/dashboard/CaloriesCard';
 import { MealCard, EmptyHistory } from '@/components/dashboard/MealCard';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { removeMeal } from '@/store/slices/mealsSlice';
-import { deleteMealRow } from '@/lib/supabase/db';
+import { deleteMeal } from '@/lib/api/client';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 import { colors } from '@/theme/theme';
 import type { Meal } from '@/types';
@@ -31,8 +30,8 @@ export default function DashboardPage() {
   const isToday = selectedDay === dateKey(new Date());
 
   useEffect(() => {
-    if (ready && !onboardingCompleted) router.replace('/onboarding/1');
-  }, [ready, onboardingCompleted, router]);
+    if (ready && !onboardingCompleted && !plan) router.replace('/onboarding/1');
+  }, [ready, onboardingCompleted, plan, router]);
 
   const dayMeals = useMemo(
     () => meals.filter((m) => dateKey(new Date(m.createdAt)) === selectedDay),
@@ -60,7 +59,7 @@ export default function DashboardPage() {
 
   const handleDelete = (meal: Meal) => {
     dispatch(removeMeal(meal.id));
-    deleteMealRow(meal.id, meal.photo).catch(() => undefined);
+    deleteMeal(meal.id).catch(() => undefined);
   };
 
   const macroCard = (kind: 'protein' | 'carbs' | 'fats', label: string) => {
@@ -81,8 +80,6 @@ export default function DashboardPage() {
 
   return (
     <AppShell scanFab>
-      <GreetingHeader />
-      <Box sx={{ height: GREETING_HEADER_HEIGHT }} />
       <WeekStrip selected={selectedDay} onSelect={setSelectedDay} />
 
       {/* tapping the calories card opens goal editing */}
@@ -92,6 +89,7 @@ export default function DashboardPage() {
       >
         <CaloriesCard
           remaining={Math.abs(caloriesLeft)}
+          consumed={dayTotals.calories}
           over={caloriesOver}
           progress={goal.calories > 0 ? Math.min(1, dayTotals.calories / goal.calories) : 0}
         />
@@ -104,7 +102,7 @@ export default function DashboardPage() {
       </Box>
 
       <Typography variant="h3" sx={{ px: 2.5, mt: 3.5, mb: 1.5, fontSize: 21 }}>
-        {isToday ? 'История загрузок' : `История за ${selectedDay.slice(8)}.${selectedDay.slice(5, 7)}`}
+        {isToday ? 'Последние блюда' : `Блюда за ${selectedDay.slice(8)}.${selectedDay.slice(5, 7)}`}
       </Typography>
       <Box sx={{ px: 2.5, pb: 2 }}>
         {dayMeals.length === 0 ? (

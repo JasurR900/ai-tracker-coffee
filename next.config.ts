@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Phone/LAN access in dev (e.g. http://192.168.1.159:3000).
+  allowedDevOrigins: ['192.168.1.159'],
 };
 
 export default nextConfig;

@@ -15,7 +15,7 @@ import { MacroIcon, type MacroKind } from '@/components/ui/MacroIcon';
 import { colors } from '@/theme/theme';
 import { useAppDispatch, useAppSelector, useAppStore } from '@/store/hooks';
 import { updatePlan } from '@/store/slices/profileSlice';
-import { upsertProfile } from '@/lib/supabase/db';
+import { putProfile } from '@/lib/api/client';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 const FIELDS: Array<{ key: 'calories' | 'protein' | 'carbs' | 'fats'; label: string; icon: MacroKind }> = [
@@ -60,10 +60,8 @@ export default function GoalsPage() {
     };
     setSaving(true);
     dispatch(updatePlan(newPlan));
-    const { profile, app } = store.getState();
-    if (app.userId) {
-      await upsertProfile(app.userId, profile, app.username).catch(() => undefined);
-    }
+    const { profile } = store.getState();
+    await putProfile(profile).catch(() => undefined);
     router.push('/dashboard');
   };
 

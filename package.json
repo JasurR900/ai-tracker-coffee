@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -12,12 +12,10 @@
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@google/genai": "^2.11.0",
     "@mui/icons-material": "^9.2.0",
     "@mui/material": "^9.2.0",
     "@mui/material-nextjs": "^9.1.1",
     "@reduxjs/toolkit": "^2.12.0",
-    "@supabase/supabase-js": "^2.110.3",
     "next": "16.2.10",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
@@ -31,7 +29,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
-    "pg": "^8.22.0",
     "typescript": "^5"
   }
 }

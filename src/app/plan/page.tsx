@@ -7,15 +7,14 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CheckIcon from '@mui/icons-material/Check';
-import ButtonBase from '@mui/material/ButtonBase';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
 import { useAppDispatch, useAppSelector, useAppStore } from '@/store/hooks';
-import { setAutoTrackOrders } from '@/store/slices/profileSlice';
-import { upsertProfile } from '@/lib/supabase/db';
+import { setPlan } from '@/store/slices/profileSlice';
+import { putProfile } from '@/lib/api/client';
+import { navigate } from '@/lib/navigate';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 function MacroValue({ label, value }: { label: string; value: number }) {
@@ -40,8 +39,15 @@ export default function PlanPage() {
   const dispatch = useAppDispatch();
   const store = useAppStore();
   const plan = useAppSelector((s) => s.profile.plan);
-  const autoTrack = useAppSelector((s) => s.profile.autoTrackOrders);
   const hydrated = useAppSelector((s) => s.app.hydrated);
+
+  const handleStartTracking = async () => {
+    if (!plan) return;
+    dispatch(setPlan(plan));
+    const { profile } = store.getState();
+    await putProfile(profile).catch(() => undefined);
+    navigate(router, '/dashboard');
+  };
 
   useEffect(() => {
     if (hydrated && !plan) router.replace('/onboarding/1');
@@ -104,7 +110,7 @@ export default function PlanPage() {
           Готовы перейти на умный контроль калорий?
         </Typography>
 
-        <PrimaryButton onClick={() => router.push('/dashboard')} endIcon={<ArrowForwardIcon />}>
+        <PrimaryButton onClick={handleStartTracking} endIcon={<ArrowForwardIcon />}>
           Начать трекинг
         </PrimaryButton>
 
@@ -114,51 +120,6 @@ export default function PlanPage() {
         >
           Изменить данные
         </Button>
-
-        <ButtonBase
-          onClick={() => {
-            dispatch(setAutoTrackOrders(!autoTrack));
-            const { profile, app } = store.getState();
-            if (app.userId) {
-              upsertProfile(app.userId, profile, app.username).catch(() => undefined);
-            }
-          }}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            textAlign: 'left',
-            gap: 1.5,
-            mt: 2,
-            mb: 1,
-            px: 1,
-            py: 1,
-            borderRadius: 2,
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
-            <Typography sx={{ fontSize: 13.5, color: '#B4B7C3' }}>
-              Автоматически учитывать мои заказы из{' '}
-              <Box component="span" sx={{ color: colors.navy, fontWeight: 700 }}>
-                Point Coffee
-              </Box>
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              width: 26,
-              height: 26,
-              borderRadius: '50%',
-              flexShrink: 0,
-              border: autoTrack ? 'none' : `2px solid ${colors.track}`,
-              bgcolor: autoTrack ? colors.navy : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {autoTrack && <CheckIcon sx={{ fontSize: 16, color: '#fff' }} />}
-          </Box>
-        </ButtonBase>
       </Box>
     </AppShell>
   );

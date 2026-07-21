@@ -8,7 +8,15 @@ import QRCode from 'qrcode';
 
 const MOBILE_UA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i;
 
+declare global {
+  interface Window {
+    ReactNativeWebView?: { postMessage: (msg: string) => void };
+  }
+}
+
 function isMobileDevice(): boolean {
+  // Native WebView bridge — always treat as mobile
+  if (typeof window !== 'undefined' && window.ReactNativeWebView) return true;
   if (MOBILE_UA.test(navigator.userAgent)) return true;
   // touch-first devices (tablets, phones with desktop-mode UA)
   return navigator.maxTouchPoints > 1 && window.innerWidth < 1024;

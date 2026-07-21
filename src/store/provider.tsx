@@ -2,59 +2,130 @@
 
 import { useEffect, useRef } from 'react';
 import { Provider } from 'react-redux';
-import type { Session } from '@supabase/supabase-js';
 import { makeStore, type AppStore } from './index';
-import { hydrateProfile, resetProfile } from './slices/profileSlice';
+import { hydrateProfile, resetProfile, setSubscription } from './slices/profileSlice';
 import { hydrateMeals, clearMeals } from './slices/mealsSlice';
-import { markHydrated, setAuth } from './slices/appSlice';
-import { getSupabase } from '@/lib/supabase/client';
-import { fetchMeals, fetchProfile } from '@/lib/supabase/db';
-import { emailToUsername } from '@/lib/username';
+import { markHydrated, setAuthenticated, setNoToken, setUserMe } from './slices/appSlice';
+import { hydrateSubscription, resetSubscription } from './slices/subscriptionSlice';
+import { getMe, getMeals, getProfile, getSubscriptionStatus } from '@/lib/api/client';
+import { onTokenChange, waitForToken } from '@/lib/api/token';
+import { mergeProfileFromServer } from '@/lib/profileMerge';
+import { initialProfileState } from './slices/profileSlice';
+import type { SubscriptionStatusResponse } from '@/lib/api/types';
+
+function mapSubscription(status: SubscriptionStatusResponse) {
+  return {
+    subscription: status.subscription ?? status.active ?? null,
+    subscriptionActive: Boolean(status.access?.allowed),
+    subscriptionStatus: (status.access?.allowed
+      ? 'active'
+      : status.subscription || status.trialUsed
+        ? 'expired'
+        : 'none') as 'none' | 'active' | 'expired',
+    daysLeft: status.access?.daysLeft ?? status.active?.daysLeft ?? 0,
+    trialUsed: Boolean(status.trialUsed),
+    accessAllowed: Boolean(status.access?.allowed),
+    accessCode: status.access?.code ?? 'SUBSCRIPTION_REQUIRED',
+  };
+}
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const storeRef = useRef<AppStore | null>(null);
-  const loadedUserId = useRef<string | null>(null);
+  const loaded = useRef(false);
   if (!storeRef.current) {
     storeRef.current = makeStore();
   }
 
   useEffect(() => {
     const store = storeRef.current!;
-    const supabase = getSupabase();
+    let cancelled = false;
 
-    async function loadForSession(session: Session | null) {
-      if (!session) {
-        loadedUserId.current = null;
-        store.dispatch(setAuth(null));
+    async function hydrate(token: string | null) {
+      if (!token) {
+        loaded.current = false;
+        store.dispatch(setNoToken(true));
+        store.dispatch(setAuthenticated(false));
+        store.dispatch(setUserMe(null));
         store.dispatch(resetProfile());
         store.dispatch(clearMeals());
+        store.dispatch(resetSubscription());
         store.dispatch(markHydrated());
         return;
       }
-      const userId = session.user.id;
-      if (loadedUserId.current === userId) return;
-      loadedUserId.current = userId;
-      const username =
-        (session.user.user_metadata?.username as string | undefined) ??
-        emailToUsername(session.user.email ?? null);
-      store.dispatch(setAuth({ userId, username }));
-      const [profile, meals] = await Promise.all([fetchProfile(userId), fetchMeals(userId)]);
-      if (profile) store.dispatch(hydrateProfile(profile));
-      store.dispatch(hydrateMeals({ items: meals }));
-      store.dispatch(markHydrated());
+
+      try {
+        store.dispatch(setAuthenticated(true));
+        store.dispatch(setNoToken(false));
+
+        const [me, profile, meals, status] = await Promise.all([
+          getMe().catch(() => null),
+          getProfile().catch(() => null),
+          getMeals(50).catch(() => []),
+          getSubscriptionStatus().catch(() => null),
+        ]);
+
+        if (cancelled) return;
+
+        if (me) {
+          store.dispatch(
+            setUserMe({
+              name: me.name ?? null,
+              phone: me.phone ?? null,
+              avatarUrl: me.avatarUrl ?? me.avatar ?? null,
+            }),
+          );
+        }
+
+        if (profile) {
+          const current = store.getState().profile;
+          const normalized = {
+            ...initialProfileState,
+            ...profile,
+            birthDate: profile.birthDate ?? initialProfileState.birthDate,
+            heightCm: profile.heightCm ?? initialProfileState.heightCm,
+            weightKg: Number(profile.weightKg ?? initialProfileState.weightKg),
+            subscription: profile.subscription ?? null,
+            plan: profile.plan ?? null,
+            autoTrackOrders: Boolean(profile.autoTrackOrders),
+            onboardingCompleted: Boolean(profile.onboardingCompleted),
+          };
+          store.dispatch(hydrateProfile(mergeProfileFromServer(current, normalized)));
+        }
+
+        store.dispatch(hydrateMeals({ items: meals }));
+
+        if (status) {
+          const mapped = mapSubscription(status);
+          store.dispatch(hydrateSubscription(mapped));
+          store.dispatch(setSubscription(mapped.subscription));
+        }
+
+        loaded.current = true;
+      } catch (error) {
+        console.error('Failed to hydrate app state:', error);
+      } finally {
+        if (!cancelled) store.dispatch(markHydrated());
+      }
     }
 
-    supabase.auth.getSession().then(({ data }) => loadForSession(data.session));
+    waitForToken(4000).then((token) => {
+      if (!cancelled) void hydrate(token);
+    });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        void loadForSession(session);
-      } else if (event === 'SIGNED_OUT') {
-        void loadForSession(null);
+    const unsub = onTokenChange((token) => {
+      if (cancelled) return;
+      if (token) {
+        loaded.current = false;
+        void hydrate(token);
+      } else {
+        void hydrate(null);
       }
     });
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, []);
 
   return <Provider store={storeRef.current}>{children}</Provider>;

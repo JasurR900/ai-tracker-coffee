@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 
-/** Redirects to /auth when the session is missing. Returns readiness flags. */
+/**
+ * Auth guard for WebView-only usage.
+ * Returns readiness flags — does not redirect to a login page
+ * (JWT comes from the native coffee app).
+ */
 export function useAuthGuard() {
-  const router = useRouter();
   const hydrated = useAppSelector((s) => s.app.hydrated);
   const authenticated = useAppSelector((s) => s.app.authenticated);
+  const noToken = useAppSelector((s) => s.app.noToken);
 
-  useEffect(() => {
-    if (hydrated && !authenticated) router.replace('/auth');
-  }, [hydrated, authenticated, router]);
-
-  return { hydrated, authenticated, ready: hydrated && authenticated };
+  return {
+    hydrated,
+    authenticated,
+    noToken,
+    ready: hydrated && authenticated,
+  };
 }

@@ -9,13 +9,15 @@ import { MacroIcon } from '@/components/ui/MacroIcon';
 
 interface CaloriesCardProps {
   remaining: number;
+  /** calories already consumed today */
+  consumed: number;
   /** 0..1 share of the goal already consumed */
   progress: number;
   /** true when the daily goal is exceeded; `remaining` then holds the excess */
   over?: boolean;
 }
 
-export function CaloriesCard({ remaining, progress, over = false }: CaloriesCardProps) {
+export function CaloriesCard({ remaining, consumed, progress, over = false }: CaloriesCardProps) {
   return (
     <Paper
       sx={{
@@ -29,16 +31,28 @@ export function CaloriesCard({ remaining, progress, over = false }: CaloriesCard
       }}
     >
       <Box>
-        <Typography
-          sx={{
-            fontSize: 44,
-            fontWeight: 800,
-            color: over ? '#D14D5B' : colors.heading,
-            lineHeight: 1,
-          }}
-        >
-          {over ? `+${remaining}` : remaining}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.25 }}>
+          <Typography
+            sx={{
+              fontSize: 44,
+              fontWeight: 800,
+              color: over ? '#D14D5B' : colors.heading,
+              lineHeight: 1,
+            }}
+          >
+            {over ? `+${remaining}` : remaining}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: 28,
+              fontWeight: 700,
+              color: '#9C9FAD',
+              lineHeight: 1,
+            }}
+          >
+            /{consumed}
+          </Typography>
+        </Box>
         <Typography sx={{ fontSize: 15, color: over ? '#D14D5B' : 'text.secondary', mt: 1 }}>
           {over ? 'Сверх нормы калорий' : 'Осталось калорий'}
         </Typography>
@@ -100,10 +114,12 @@ export function MacroCard({ status, value, label, kind, progress, over = false }
       }}
     >
       <Typography
+        noWrap
         sx={{
-          fontSize: 12.5,
+          fontSize: over ? 11 : 12.5,
           color: over ? '#D14D5B' : 'text.secondary',
           fontWeight: over ? 700 : 600,
+          maxWidth: '100%',
         }}
       >
         {status}

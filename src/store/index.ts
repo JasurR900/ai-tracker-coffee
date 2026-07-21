@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import profileReducer from './slices/profileSlice';
 import mealsReducer from './slices/mealsSlice';
 import appReducer from './slices/appSlice';
+import subscriptionReducer from './slices/subscriptionSlice';
 
 export function makeStore() {
   return configureStore({
@@ -9,6 +10,7 @@ export function makeStore() {
       profile: profileReducer,
       meals: mealsReducer,
       app: appReducer,
+      subscription: subscriptionReducer,
     },
   });
 }

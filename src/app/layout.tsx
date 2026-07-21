@@ -6,6 +6,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { theme } from '@/theme/theme';
 import { StoreProvider } from '@/store/provider';
 import { DeviceGate } from '@/components/layout/DeviceGate';
+import { NoTokenGate } from '@/components/layout/NoTokenGate';
 import './globals.css';
 
 const manrope = Manrope({
@@ -36,7 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeProvider theme={theme}>
             <CssBaseline />
             <StoreProvider>
-              <DeviceGate>{children}</DeviceGate>
+              <DeviceGate>
+                <NoTokenGate>{children}</NoTokenGate>
+              </DeviceGate>
             </StoreProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>

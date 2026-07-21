@@ -15,11 +15,11 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
-import { useAppDispatch, useAppStore } from '@/store/hooks';
+import { useAppDispatch } from '@/store/hooks';
 import { addMeal } from '@/store/slices/mealsSlice';
-import { insertMeal } from '@/lib/supabase/db';
+import { analyze, postMeal } from '@/lib/api/client';
+import { handleSubscriptionError, subscriptionErrorMessage } from '@/lib/subscriptionGate';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import type { FoodAnalysis } from '@/types';
 
 const EXAMPLES = ['Плов, большая порция', 'Латте с сиропом 400 мл', '2 яйца и тост с маслом'];
 
@@ -44,7 +44,6 @@ export default function AddTextPage() {
   const router = useRouter();
   useAuthGuard();
   const dispatch = useAppDispatch();
-  const store = useAppStore();
   const [text, setText] = useState('');
   const [dayOffset, setDayOffset] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -64,40 +63,31 @@ export default function AddTextPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim() }),
-      });
-      const data = (await res.json()) as FoodAnalysis & { error?: string };
-      if (!res.ok) throw new Error(data.error || 'Не удалось проанализировать описание');
+      const data = await analyze({ text: text.trim() });
       if (!data.isFood) {
         setError('Не удалось распознать еду в описании. Уточните, что вы съели.');
         setLoading(false);
         return;
       }
-      const userId = store.getState().app.userId;
-      if (!userId) {
-        router.push('/auth');
-        return;
-      }
-      const meal = await insertMeal(
-        userId,
-        {
-          name: data.name,
-          calories: data.calories,
-          protein: data.protein,
-          fats: data.fats,
-          carbs: data.carbs,
-          description: data.description,
-          photo: null,
-        },
-        createdAt,
-      );
+      const meal = await postMeal({
+        name: data.name,
+        calories: data.calories,
+        protein: data.protein,
+        fats: data.fats,
+        carbs: data.carbs,
+        description: data.description,
+        photo: null,
+        ...(createdAt ? { createdAt } : {}),
+      });
       dispatch(addMeal(meal));
       router.push(`/food/${meal.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Ошибка анализа. Попробуйте ещё раз.');
+      if (handleSubscriptionError(e, router)) {
+        setLoading(false);
+        return;
+      }
+      const subMsg = subscriptionErrorMessage(e);
+      setError(subMsg ?? (e instanceof Error ? e.message : 'Ошибка анализа. Попробуйте ещё раз.'));
       setLoading(false);
     }
   };

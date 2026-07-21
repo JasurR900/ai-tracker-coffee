@@ -1,47 +1,46 @@
+import type { NutritionPlanOffer } from '@/lib/api/types';
 import type { Subscription } from '@/types';
 
-export interface PremiumPlan {
+export type PremiumPlan = {
   id: string;
   label: string;
   price: number;
   days: number;
   statusLabel: string;
+  isTrial: boolean;
   badge?: 'ПОПУЛЯРНЫЙ ВЫБОР' | 'ЛУЧШАЯ ЦЕНА';
+};
+
+/** Map API plan offers into UI plan cards. */
+export function mapApiPlans(offers: NutritionPlanOffer[]): PremiumPlan[] {
+  return offers
+    .filter((p) => !p.isTrial)
+    .map((p, index, arr) => {
+      let badge: PremiumPlan['badge'];
+      if (p.planId === 'month' || (arr.length > 1 && index === 0 && p.planId !== 'year')) {
+        badge = p.planId === 'month' ? 'ПОПУЛЯРНЫЙ ВЫБОР' : undefined;
+      }
+      if (p.planId === 'year') badge = 'ЛУЧШАЯ ЦЕНА';
+      return {
+        id: p.planId,
+        label: p.label,
+        price: p.price,
+        days: p.durationDays,
+        statusLabel: p.statusLabel,
+        isTrial: Boolean(p.isTrial),
+        badge,
+      };
+    });
 }
 
-export const PREMIUM_PLANS: PremiumPlan[] = [
-  { id: 'week', label: '1 неделя', price: 10000, days: 7, statusLabel: 'Недельный' },
-  {
+export function getPlanFromList(plans: PremiumPlan[], id: string | null): PremiumPlan {
+  return plans.find((p) => p.id === id) ?? plans[0] ?? {
     id: 'month',
     label: '1 месяц',
-    price: 25000,
+    price: 15000,
     days: 30,
     statusLabel: 'Месячный',
-    badge: 'ПОПУЛЯРНЫЙ ВЫБОР',
-  },
-  { id: 'quarter', label: '3 месяца', price: 75000, days: 90, statusLabel: 'Квартальный' },
-  {
-    id: 'year',
-    label: '12 месяцев',
-    price: 200000,
-    days: 365,
-    statusLabel: 'Годовой',
-    badge: 'ЛУЧШАЯ ЦЕНА',
-  },
-];
-
-export function getPlan(id: string | null): PremiumPlan {
-  return PREMIUM_PLANS.find((p) => p.id === id) ?? PREMIUM_PLANS[1];
-}
-
-export function createSubscription(plan: PremiumPlan, now = new Date()): Subscription {
-  const expires = new Date(now);
-  expires.setDate(expires.getDate() + plan.days);
-  return {
-    planId: plan.id,
-    label: plan.statusLabel,
-    paidAt: now.toISOString(),
-    expiresAt: expires.toISOString(),
+    isTrial: false,
   };
 }
 

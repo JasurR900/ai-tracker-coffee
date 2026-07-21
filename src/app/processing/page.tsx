@@ -11,7 +11,7 @@ import { colors } from '@/theme/theme';
 import { useAppDispatch, useAppSelector, useAppStore } from '@/store/hooks';
 import { setPlan } from '@/store/slices/profileSlice';
 import { calculatePlan } from '@/lib/nutrition';
-import { upsertProfile } from '@/lib/supabase/db';
+import { putProfile } from '@/lib/api/client';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 const CHECK_ITEMS = ['Калории', 'Углеводы', 'Белки', 'Жиры', 'Оценка здоровья'];
@@ -42,26 +42,26 @@ export default function ProcessingPage() {
       if (t >= 1 && !finished.current) {
         finished.current = true;
         clearInterval(interval);
-        dispatch(
-          setPlan(
-            calculatePlan({
-              gender: profile.gender!,
-              birthDate: profile.birthDate,
-              heightCm: profile.heightCm,
-              weightKg: profile.weightKg,
-              workouts: profile.workouts!,
-              goal: profile.goal!,
-              diet: profile.diet!,
-            }),
-          ),
-        );
-        const { profile: updatedProfile, app } = store.getState();
-        if (app.userId) {
-          upsertProfile(app.userId, updatedProfile, app.username).catch((e) =>
+        void (async () => {
+          dispatch(
+            setPlan(
+              calculatePlan({
+                gender: profile.gender!,
+                birthDate: profile.birthDate,
+                heightCm: profile.heightCm,
+                weightKg: profile.weightKg,
+                workouts: profile.workouts!,
+                goal: profile.goal!,
+                diet: profile.diet!,
+              }),
+            ),
+          );
+          const { profile: updatedProfile } = store.getState();
+          await putProfile(updatedProfile).catch((e) =>
             console.error('Failed to save profile:', e),
           );
-        }
-        setTimeout(() => router.push('/plan'), 450);
+          router.push('/plan');
+        })();
       }
     }, 40);
 

@@ -13,12 +13,13 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import { AppShell, PENDING_PHOTO_KEY } from '@/components/layout/AppShell';
-import { useAppDispatch, useAppStore } from '@/store/hooks';
+import { useAppDispatch } from '@/store/hooks';
 import { addMeal } from '@/store/slices/mealsSlice';
 import { compressImage } from '@/lib/image';
-import { insertMeal, uploadMealPhoto } from '@/lib/supabase/db';
+import { analyze, postMeal, uploadMealPhoto } from '@/lib/api/client';
+import { handleSubscriptionError, subscriptionErrorMessage } from '@/lib/subscriptionGate';
+import { isNativeWebView, requestNativePhoto } from '@/lib/nativeBridge';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import type { FoodAnalysis } from '@/types';
 
 type Status = 'idle' | 'analyzing';
 
@@ -26,18 +27,24 @@ export default function ScanPage() {
   const router = useRouter();
   useAuthGuard();
   const dispatch = useAppDispatch();
-  const store = useAppStore();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [nativeMode, setNativeMode] = useState(false);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setNativeMode(isNativeWebView());
+  }, []);
+
+  useEffect(() => {
+    if (nativeMode) return;
     let cancelled = false;
     async function startCamera() {
       try {
+        if (!navigator.mediaDevices?.getUserMedia) return;
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' },
           audio: false,
@@ -53,39 +60,28 @@ export default function ScanPage() {
           setCameraReady(true);
         }
       } catch {
-        // camera unavailable — the gallery upload still works
+        // insecure context / denied — native bridge or gallery still works
       }
     }
-    startCamera();
+    void startCamera();
     return () => {
       cancelled = true;
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
-  }, []);
+  }, [nativeMode]);
 
-  const analyze = useCallback(
+  const runAnalyze = useCallback(
     async (photoDataUrl: string) => {
       setStatus('analyzing');
       try {
-        const res = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: photoDataUrl }),
-        });
-        const data = (await res.json()) as FoodAnalysis & { error?: string };
-        if (!res.ok) throw new Error(data.error || 'Не удалось проанализировать фото');
+        const data = await analyze({ image: photoDataUrl });
         if (!data.isFood) {
           setError('На фото не удалось распознать еду. Попробуйте ещё раз.');
           setStatus('idle');
           return;
         }
-        const userId = store.getState().app.userId;
-        if (!userId) {
-          router.push('/auth');
-          return;
-        }
-        const photoUrl = await uploadMealPhoto(userId, photoDataUrl);
-        const meal = await insertMeal(userId, {
+        const photoUrl = await uploadMealPhoto(photoDataUrl);
+        const meal = await postMeal({
           name: data.name,
           calories: data.calories,
           protein: data.protein,
@@ -97,26 +93,50 @@ export default function ScanPage() {
         dispatch(addMeal(meal));
         router.push(`/food/${meal.id}`);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Ошибка анализа. Попробуйте ещё раз.');
+        if (handleSubscriptionError(e, router)) {
+          setStatus('idle');
+          return;
+        }
+        const subMsg = subscriptionErrorMessage(e);
+        setError(subMsg ?? (e instanceof Error ? e.message : 'Ошибка анализа. Попробуйте ещё раз.'));
         setStatus('idle');
       }
     },
-    [dispatch, router, store],
+    [dispatch, router],
   );
 
-  // a photo picked from the gallery FAB menu arrives via sessionStorage
   useEffect(() => {
     const pending = sessionStorage.getItem(PENDING_PHOTO_KEY);
     if (pending) {
       sessionStorage.removeItem(PENDING_PHOTO_KEY);
-      void analyze(pending);
+      void runAnalyze(pending);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const pickNative = useCallback(
+    async (source: 'camera' | 'gallery') => {
+      if (status === 'analyzing') return;
+      try {
+        const dataUrl = await requestNativePhoto(source);
+        const compressed = await compressImage(dataUrl);
+        void runAnalyze(compressed);
+      } catch (e) {
+        if (e instanceof Error && e.message === 'cancelled') return;
+        setError('Не удалось получить фото. Проверьте разрешение камеры.');
+      }
+    },
+    [runAnalyze, status],
+  );
+
   const handleCapture = useCallback(async () => {
+    if (status === 'analyzing') return;
+    if (nativeMode || !cameraReady) {
+      void pickNative('camera');
+      return;
+    }
     const video = videoRef.current;
-    if (!video || !cameraReady || status === 'analyzing') return;
+    if (!video) return;
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -125,8 +145,17 @@ export default function ScanPage() {
     ctx.drawImage(video, 0, 0);
     const raw = canvas.toDataURL('image/jpeg', 0.9);
     const compressed = await compressImage(raw);
-    void analyze(compressed);
-  }, [analyze, cameraReady, status]);
+    void runAnalyze(compressed);
+  }, [runAnalyze, cameraReady, status, nativeMode, pickNative]);
+
+  const handleGallery = useCallback(() => {
+    if (status === 'analyzing') return;
+    if (nativeMode) {
+      void pickNative('gallery');
+      return;
+    }
+    fileInputRef.current?.click();
+  }, [nativeMode, pickNative, status]);
 
   const handleFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,13 +164,15 @@ export default function ScanPage() {
       if (!file || status === 'analyzing') return;
       try {
         const compressed = await compressImage(file);
-        void analyze(compressed);
+        void runAnalyze(compressed);
       } catch {
         setError('Не удалось открыть изображение');
       }
     },
-    [analyze, status],
+    [runAnalyze, status],
   );
+
+  const shutterEnabled = nativeMode || cameraReady;
 
   return (
     <AppShell dark>
@@ -158,7 +189,6 @@ export default function ScanPage() {
           minHeight: '100dvh',
         }}
       >
-        {/* top handle bar */}
         <Box
           sx={{
             width: 60,
@@ -188,36 +218,49 @@ export default function ScanPage() {
           </Typography>
         </Box>
 
-        {/* camera viewport */}
-        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: cameraReady ? 1 : 0,
-            }}
-          />
-          {!cameraReady && (
+        <Box
+          sx={{ flex: 1, position: 'relative', overflow: 'hidden', cursor: nativeMode ? 'pointer' : 'default' }}
+          onClick={() => {
+            if (nativeMode && status === 'idle') void pickNative('camera');
+          }}
+        >
+          {!nativeMode && (
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: cameraReady ? 1 : 0,
+              }}
+            />
+          )}
+          {(nativeMode || !cameraReady) && (
             <Box
               sx={{
                 position: 'absolute',
                 inset: 0,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: 1.5,
+                px: 3,
               }}
             >
-              <PhotoCameraOutlinedIcon sx={{ fontSize: 96, color: 'rgba(255,255,255,0.08)' }} />
+              <PhotoCameraOutlinedIcon sx={{ fontSize: 96, color: 'rgba(255,255,255,0.2)' }} />
+              {nativeMode && (
+                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontSize: 15, textAlign: 'center' }}>
+                  Нажмите кнопку ниже, чтобы открыть камеру
+                </Typography>
+              )}
             </Box>
           )}
 
-          {/* scan line */}
           <Box
             sx={{
               position: 'absolute',
@@ -257,7 +300,6 @@ export default function ScanPage() {
           )}
         </Box>
 
-        {/* controls */}
         <Box
           sx={{
             display: 'flex',
@@ -269,7 +311,7 @@ export default function ScanPage() {
           }}
         >
           <IconButton
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleGallery}
             disabled={status === 'analyzing'}
             sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.1)', width: 52, height: 52 }}
             aria-label="Загрузить из галереи"
@@ -278,7 +320,7 @@ export default function ScanPage() {
           </IconButton>
           <ButtonBase
             onClick={handleCapture}
-            disabled={!cameraReady || status === 'analyzing'}
+            disabled={!shutterEnabled || status === 'analyzing'}
             aria-label="Сделать фото"
             sx={{
               width: 74,
@@ -288,7 +330,7 @@ export default function ScanPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: cameraReady ? 1 : 0.35,
+              opacity: shutterEnabled ? 1 : 0.35,
             }}
           >
             <Box sx={{ width: 58, height: 58, borderRadius: '50%', bgcolor: '#fff' }} />
@@ -300,6 +342,7 @@ export default function ScanPage() {
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           hidden
           onChange={handleFile}
         />

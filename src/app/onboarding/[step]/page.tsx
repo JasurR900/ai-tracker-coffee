@@ -12,7 +12,8 @@ import { StepParams } from '@/components/onboarding/steps/StepParams';
 import { StepWorkouts } from '@/components/onboarding/steps/StepWorkouts';
 import { StepGoal } from '@/components/onboarding/steps/StepGoal';
 import { StepDiet } from '@/components/onboarding/steps/StepDiet';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppStore } from '@/store/hooks';
+import { putProfile } from '@/lib/api/client';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 const TOTAL_STEPS = 5;
@@ -21,6 +22,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
   const { step: stepParam } = use(params);
   const router = useRouter();
   useAuthGuard();
+  const store = useAppStore();
   const profile = useAppSelector((s) => s.profile);
 
   const step = useMemo(() => {
@@ -50,9 +52,15 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     else router.push(`/onboarding/${step - 1}`);
   };
 
-  const handleContinue = () => {
-    if (step < TOTAL_STEPS) router.push(`/onboarding/${step + 1}`);
-    else router.push('/processing');
+  const handleContinue = async () => {
+    if (step < TOTAL_STEPS) {
+      router.push(`/onboarding/${step + 1}`);
+      return;
+    }
+
+    const { profile: currentProfile } = store.getState();
+    await putProfile(currentProfile).catch(() => undefined);
+    router.push('/processing');
   };
 
   return (

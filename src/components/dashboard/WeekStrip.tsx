@@ -54,7 +54,14 @@ export function WeekStrip({ selected, onSelect }: WeekStripProps) {
     <Box
       ref={scrollRef}
       className="no-scrollbar"
-      sx={{ display: 'flex', gap: 1, px: 2.5, mt: 2, overflowX: 'auto', alignItems: 'flex-start' }}
+      sx={{
+        display: 'flex',
+        gap: 1,
+        px: 2.5,
+        pt: 'calc(max(env(safe-area-inset-top), 8px) + 12px)',
+        overflowX: 'auto',
+        alignItems: 'flex-start',
+      }}
     >
       {days.map(({ label, day, key, isToday }) => {
         const active = key === selected;
@@ -73,7 +80,6 @@ export function WeekStrip({ selected, onSelect }: WeekStripProps) {
               py: 1,
               ...(active && {
                 bgcolor: '#fff',
-                mt: -1,
                 boxShadow: '0 6px 18px rgba(23, 26, 78, 0.10)',
               }),
             }}

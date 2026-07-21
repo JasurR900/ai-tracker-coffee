@@ -14,6 +14,8 @@ import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import { colors } from '@/theme/theme';
 import { compressImage } from '@/lib/image';
+import { navigate } from '@/lib/navigate';
+import { isNativeWebView, requestNativePhoto } from '@/lib/nativeBridge';
 
 export const PENDING_PHOTO_KEY = 'calai:pending-photo';
 
@@ -30,6 +32,19 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
   const [menuOpen, setMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const openNativeCapture = async (source: 'camera' | 'gallery') => {
+    try {
+      const dataUrl = await requestNativePhoto(source);
+      const compressed = await compressImage(dataUrl);
+      sessionStorage.setItem(PENDING_PHOTO_KEY, compressed);
+      setMenuOpen(false);
+      navigate(router, '/scan');
+    } catch {
+      // cancelled or failed — keep menu closed if user cancelled
+      setMenuOpen(false);
+    }
+  };
+
   const handleGalleryFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -38,7 +53,7 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
       const dataUrl = await compressImage(file);
       sessionStorage.setItem(PENDING_PHOTO_KEY, dataUrl);
       setMenuOpen(false);
-      router.push('/scan');
+      navigate(router, '/scan');
     } catch {
       // ignore unreadable files
     }
@@ -94,12 +109,12 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
     active: boolean,
   ) => (
     <ButtonBase
-      onClick={() => router.push(href)}
+      onClick={() => navigate(router, href)}
       aria-label={label}
       sx={{
-        width: 52,
-        height: 52,
-        borderRadius: '16px',
+        width: 46,
+        height: 46,
+        borderRadius: '14px',
         color: active ? colors.navy : '#B4B7C3',
         '&:hover': { bgcolor: 'rgba(27,27,109,0.05)' },
       }}
@@ -125,7 +140,7 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
       <Box
         sx={{
           flex: 1,
-          pb: scanFab ? '116px' : 0,
+          pb: scanFab ? '92px' : 0,
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -175,7 +190,13 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
                 {menuItem(
                   'Галерея',
                   <PhotoLibraryOutlinedIcon />,
-                  () => fileInputRef.current?.click(),
+                  () => {
+                    if (isNativeWebView()) {
+                      void openNativeCapture('gallery');
+                      return;
+                    }
+                    fileInputRef.current?.click();
+                  },
                   40,
                 )}
                 <Box sx={{ mb: 3 }}>
@@ -183,8 +204,12 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
                     'Камера',
                     <PhotoCameraOutlinedIcon />,
                     () => {
+                      if (isNativeWebView()) {
+                        void openNativeCapture('camera');
+                        return;
+                      }
                       setMenuOpen(false);
-                      router.push('/scan');
+                      navigate(router, '/scan');
                     },
                     0,
                   )}
@@ -194,7 +219,7 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
                   <EditNoteIcon />,
                   () => {
                     setMenuOpen(false);
-                    router.push('/add-text');
+                    navigate(router, '/add-text');
                   },
                   80,
                 )}
@@ -211,8 +236,8 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 px: 4,
-                pt: 1.25,
-                pb: 'max(env(safe-area-inset-bottom), 12px)',
+                pt: 0.5,
+                pb: 'max(env(safe-area-inset-bottom), 4px)',
               }}
             >
               {sideButton(
@@ -227,10 +252,10 @@ export function AppShell({ children, scanFab = false, dark = false }: AppShellPr
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-label={menuOpen ? 'Закрыть' : 'Добавить приём пищи'}
                 sx={{
-                  width: 64,
-                  height: 64,
+                  width: 58,
+                  height: 58,
                   borderRadius: '50%',
-                  mt: -4.5,
+                  mt: -3.5,
                   bgcolor: menuOpen ? colors.navy : colors.orangeDeep,
                   color: '#fff',
                   border: '4px solid #fff',

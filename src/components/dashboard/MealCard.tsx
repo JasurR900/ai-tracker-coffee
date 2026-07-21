@@ -109,9 +109,13 @@ export function MealCard({ meal, onClick, onEdit, onDelete }: MealCardProps) {
           <Paper sx={{ width: '100%', borderRadius: '20px', overflow: 'hidden', display: 'flex' }}>
             <Box
               sx={{
-                width: 116,
-                alignSelf: 'stretch',
+                width: 140,
+                aspectRatio: '1 / 1',
                 flexShrink: 0,
+                alignSelf: 'center',
+                my: 1,
+                ml: 1,
+                borderRadius: '14px',
                 bgcolor: '#EEEFF5',
                 display: 'flex',
                 alignItems: 'center',

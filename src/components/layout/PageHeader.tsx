@@ -3,10 +3,12 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CloseIcon from '@mui/icons-material/Close';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlined';
 import { colors } from '@/theme/theme';
+import { openExternalUrl } from '@/lib/nativeBridge';
+
+const SUPPORT_TELEGRAM = 'https://t.me/pointcoffeeuz';
 
 interface PageHeaderProps {
   title: string;
@@ -17,6 +19,8 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, onBack, onClose, showHelp, elevated }: PageHeaderProps) {
+  const handleClose = onClose ?? onBack;
+
   return (
     <Box
       sx={{
@@ -28,13 +32,27 @@ export function PageHeader({ title, onBack, onClose, showHelp, elevated }: PageH
         position: 'relative',
         bgcolor: elevated ? '#FAFAFC' : 'transparent',
         borderBottom: elevated ? `1px solid ${colors.divider}` : 'none',
+        minHeight: 56,
       }}
     >
-      {onBack && (
-        <IconButton onClick={onBack} sx={{ color: colors.heading, mr: 1, p: 0.5 }} aria-label="Назад">
-          <ArrowBackIcon />
+      {handleClose ? (
+        <IconButton
+          onClick={handleClose}
+          aria-label="Close"
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            color: colors.heading,
+            p: 0.75,
+            mr: 0.5,
+          }}
+        >
+          <ArrowBackIosNewIcon sx={{ fontSize: 18 }} />
         </IconButton>
+      ) : (
+        <Box sx={{ width: 40 }} />
       )}
+
       <Typography
         variant="h3"
         sx={{
@@ -44,31 +62,24 @@ export function PageHeader({ title, onBack, onClose, showHelp, elevated }: PageH
           fontSize: 22,
           fontWeight: 800,
           whiteSpace: 'nowrap',
+          maxWidth: '55%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
       >
         {title}
       </Typography>
-      <Box sx={{ ml: 'auto' }}>
-        {onClose && (
+
+      <Box sx={{ ml: 'auto', minWidth: 40, display: 'flex', justifyContent: 'flex-end' }}>
+        {showHelp ? (
           <IconButton
-            onClick={onClose}
-            aria-label="Закрыть"
-            sx={{
-              bgcolor: '#E4E5EA',
-              color: '#5A5D6E',
-              width: 34,
-              height: 34,
-              '&:hover': { bgcolor: '#D8D9E0' },
-            }}
+            aria-label="Помощь"
+            onClick={() => openExternalUrl(SUPPORT_TELEGRAM)}
+            sx={{ color: colors.textSecondary }}
           >
-            <CloseIcon sx={{ fontSize: 20 }} />
-          </IconButton>
-        )}
-        {showHelp && (
-          <IconButton aria-label="Помощь" sx={{ color: colors.textSecondary }}>
             <HelpOutlineIcon />
           </IconButton>
-        )}
+        ) : null}
       </Box>
     </Box>
   );

@@ -1,16 +1,20 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/theme/theme';
-import { useAppSelector } from '@/store/hooks';
-import { subscriptionDaysLeft } from '@/lib/premium';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { hydrateSubscription } from '@/store/slices/subscriptionSlice';
+import { setSubscription } from '@/store/slices/profileSlice';
+import { getSubscriptionStatus } from '@/lib/api/client';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 function formatDate(iso: string): string {
@@ -20,17 +24,52 @@ function formatDate(iso: string): string {
 export default function SubscriptionPage() {
   const router = useRouter();
   const { ready } = useAuthGuard();
-  const subscription = useAppSelector((s) => s.profile.subscription);
+  const dispatch = useAppDispatch();
+  const sub = useAppSelector((s) => s.subscription);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await getSubscriptionStatus();
+        if (cancelled) return;
+        dispatch(
+          hydrateSubscription({
+            subscription: status.subscription ?? status.active ?? null,
+            subscriptionActive: Boolean(status.access?.allowed),
+            subscriptionStatus: status.access?.allowed
+              ? 'active'
+              : status.subscription || status.trialUsed
+                ? 'expired'
+                : 'none',
+            daysLeft: status.access?.daysLeft ?? status.active?.daysLeft ?? 0,
+            trialUsed: Boolean(status.trialUsed),
+            accessAllowed: Boolean(status.access?.allowed),
+            accessCode: status.access?.code ?? 'SUBSCRIPTION_REQUIRED',
+          }),
+        );
+        dispatch(setSubscription(status.subscription ?? status.active ?? null));
+      } catch {
+        // keep cached state
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch]);
+
+  const subscription = sub.subscription;
+  const isTrial = subscription?.planId === 'free_trial';
   const rows: Array<[string, string]> = subscription
     ? [
-        ['Статус', subscription.label],
-        [
-          'Подписка',
-          new Date(subscription.expiresAt) > new Date() ? 'Активна' : 'Истекла',
-        ],
-        ['Оставшиеся дни', String(subscriptionDaysLeft(subscription))],
-        ['Дата оплаты', formatDate(subscription.paidAt)],
+        ['Тариф', subscription.label],
+        ['Тип', isTrial ? 'Пробный период' : 'Платная подписка'],
+        ['Подписка', sub.subscriptionActive ? 'Активна' : 'Истекла'],
+        ['Оставшиеся дни', String(sub.daysLeft)],
+        [isTrial ? 'Дата активации' : 'Дата оплаты', formatDate(subscription.paidAt)],
         ['Истекает', formatDate(subscription.expiresAt)],
       ]
     : [];
@@ -40,7 +79,11 @@ export default function SubscriptionPage() {
       <PageHeader title="Статус подписки" onClose={() => router.push('/profile')} elevated />
 
       <Box sx={{ px: 2.5, pt: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {ready && !subscription ? (
+        {loading ? (
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CircularProgress sx={{ color: colors.navy }} />
+          </Box>
+        ) : ready && !subscription ? (
           <Box
             sx={{
               flex: 1,
@@ -75,24 +118,31 @@ export default function SubscriptionPage() {
             </PrimaryButton>
           </Box>
         ) : (
-          <Paper sx={{ borderRadius: '18px', px: 2.5, py: 1 }}>
-            {rows.map(([label, value], i) => (
-              <Box
-                key={label}
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  py: 1.75,
-                  borderBottom: i < rows.length - 1 ? `1px solid ${colors.divider}` : 'none',
-                }}
-              >
-                <Typography sx={{ fontSize: 14.5, color: 'text.secondary' }}>{label}</Typography>
-                <Typography sx={{ fontSize: 14.5, fontWeight: 700, color: colors.heading }}>
-                  {value}
-                </Typography>
-              </Box>
-            ))}
-          </Paper>
+          <>
+            <Paper sx={{ borderRadius: '18px', px: 2.5, py: 1 }}>
+              {rows.map(([label, value], i) => (
+                <Box
+                  key={label}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    py: 1.75,
+                    borderBottom: i < rows.length - 1 ? `1px solid ${colors.divider}` : 'none',
+                  }}
+                >
+                  <Typography sx={{ fontSize: 14.5, color: 'text.secondary' }}>{label}</Typography>
+                  <Typography sx={{ fontSize: 14.5, fontWeight: 700, color: colors.heading }}>
+                    {value}
+                  </Typography>
+                </Box>
+              ))}
+            </Paper>
+            {!sub.subscriptionActive && (
+              <PrimaryButton onClick={() => router.push('/premium')} sx={{ mt: 3 }}>
+                Продлить подписку
+              </PrimaryButton>
+            )}
+          </>
         )}
       </Box>
     </AppShell>
